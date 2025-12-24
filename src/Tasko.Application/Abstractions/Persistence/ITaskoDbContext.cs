@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
+using Tasko.Domain.Entities.Chats;
 using Tasko.Domain.Entities.Tasks;
 
 namespace Tasko.Application.Abstractions.Persistence;
@@ -13,5 +14,7 @@ public interface ITaskoDbContext
      DbSet<Offer> Offers { get; }
 
 
+    DbSet<ChatMessage> ChatMessages { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
+

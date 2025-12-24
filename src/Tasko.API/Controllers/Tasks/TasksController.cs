@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tasko.API.Settings;
+using Tasko.Application.DTO.Chats;
 using Tasko.Application.DTO.Tasks;
+using Tasko.Application.Handlers.Chats.Queries.GetTaskMessages;
 using Tasko.Application.Handlers.Tasks.Commands.AssignOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateTask;
@@ -29,6 +31,17 @@ public sealed class TasksController : ApiControllerBase
         return NoContent();
     }
 
+    [HttpGet("{taskId:long}/messages")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<ChatMessageDto>>> GetMessages(
+    [FromRoute] long taskId,
+    [FromQuery] int skip = 0,
+    [FromQuery] int take = 50,
+    CancellationToken ct = default)
+    {
+        return Ok(await Sender.Send(new GetTaskMessagesQuery(taskId, skip, take), ct));
+    }
+
     public sealed class CreateOfferBody
     {
         public decimal Price { get; init; }
@@ -48,3 +61,5 @@ public sealed class TasksController : ApiControllerBase
         return NoContent();
     }
 }
+
+

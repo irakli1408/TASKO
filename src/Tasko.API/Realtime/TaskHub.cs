@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Tasko.Application.Abstractions.Persistence;
+using Tasko.Domain.Entities.Chats;
 
 namespace Tasko.API.Realtime;
 
@@ -50,7 +51,6 @@ public sealed class TaskHub : Hub
         if (string.IsNullOrWhiteSpace(userIdStr) || !long.TryParse(userIdStr, out var userId))
             throw new HubException("Unauthorized");
 
-        // Повторяем ту же проверку доступа, что и в JoinTask (чтобы нельзя было вызвать без Join)
         var task = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == taskId);
         if (task is null) throw new HubException("Task not found.");
 
@@ -62,23 +62,26 @@ public sealed class TaskHub : Hub
         if (!isCreator && !isAssigned && !hasOffer)
             throw new HubException("Access denied.");
 
-        var email = Context.User?.FindFirst(ClaimTypes.Email)?.Value
-                    ?? Context.User?.FindFirst("email")?.Value
-                    ?? "unknown";
+        var email =
+            Context.User?.FindFirst(ClaimTypes.Email)?.Value ??
+            Context.User?.FindFirst("email")?.Value ??
+            "unknown";
+
+        var msg = new ChatMessage(taskId, userId, text.Trim());
+        _db.ChatMessages.Add(msg);
+        await _db.SaveChangesAsync();
 
         var payload = new
         {
+            id = msg.Id,
             taskId,
             senderUserId = userId,
             senderEmail = email,
-            text = text.Trim(),
-            sentAtUtc = DateTime.UtcNow
+            text = msg.Text,
+            createdAtUtc = msg.CreatedAtUtc
         };
 
         await Clients.Group(GroupName(taskId))
             .SendAsync("MessageReceived", payload);
     }
-
-    public Task LeaveTask(long taskId)
-        => Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(taskId));
 }
