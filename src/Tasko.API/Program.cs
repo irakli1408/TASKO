@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -13,13 +14,23 @@ using Tasko.Common.ErrorHandler.Middleware;
 using Tasko.Common.Tools.Extensions;
 using Tasko.Persistence.Auth;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // -----------------------------
 // Controllers (REST API)
 // -----------------------------
 builder.Services.AddControllers();
+
+// -----------------------------
+// HttpContextAccessor (нужен для CurrentStateService)
+// -----------------------------
+builder.Services.AddHttpContextAccessor();
+
+// -----------------------------
+// MediatR (Handlers из Tasko.Application)
+// -----------------------------
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(Tasko.Application.DTO.Auth.AuthResultDto).Assembly));
 
 // -----------------------------
 // Swagger + JWT Bearer
@@ -106,10 +117,7 @@ builder.Services.AddScoped<ITaskoDbContext>(sp => sp.GetRequiredService<TaskoDbC
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 
-// Твои сервисы токенов (как было)
 builder.Services.AddScoped<ITokenService, TokenService>();
-
-// ✅ Новый обязательный сервис (без Identity) — хеш пароля
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -126,12 +134,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
             ClockSkew = TimeSpan.FromSeconds(10),
 
-            // Чтобы CurrentStateService корректно читал имя/роли при необходимости:
             NameClaimType = System.Security.Claims.ClaimTypes.Name,
             RoleClaimType = System.Security.Claims.ClaimTypes.Role
         };
 
-        // на будущее для SignalR (/hubs) — оставил как у тебя
+        // на будущее для SignalR (/hubs)
         o.Events = new JwtBearerEvents
         {
             OnMessageReceived = ctx =>
@@ -158,7 +165,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Localization MUST be before everything that reads culture
+// Routing должен быть ДО route-localization
+app.UseRouting();
+
+// Localization: RouteDataRequestCultureProvider требует route values
 var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(locOptions.Value);
 

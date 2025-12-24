@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Tasko.API.Settings
 {
     [ApiController]
-    //[ApiVersion("1.0")]
+    [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/{culture}/[controller]")]
     public abstract class ApiControllerBase : ControllerBase
     {

@@ -12,7 +12,7 @@ using Tasko.Application.Handlers.Auth.Queries.Me;
 namespace Tasko.API.Controllers.Auth
 {
     [ApiController]
-    [Route("api/v1/{culture}/[controller]")]
+    [Route("api/v1/[controller]")]
     public sealed class AuthController : ApiControllerBase
     {
         public AuthController(ISender sender) : base(sender) { }

@@ -2,6 +2,7 @@
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
+using Tasko.Domain.Entities.Tasks;
 
 public sealed class TaskoDbContext : DbContext, ITaskoDbContext
 {
@@ -10,8 +11,12 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<TaskPost> Tasks => Set<TaskPost>();
+    public DbSet<Offer> Offers => Set<Offer>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TaskoDbContext).Assembly);
+        base.OnModelCreating(modelBuilder);
     }
 }
