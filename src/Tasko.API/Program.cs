@@ -8,8 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
 using System.Text;
+using Tasko.API.Realtime;
 using Tasko.Application.Abstractions.Auth;
 using Tasko.Application.Abstractions.Persistence;
+using Tasko.Application.Abstractions.Realtime;
 using Tasko.Common.ErrorHandler.Middleware;
 using Tasko.Common.Tools.Extensions;
 using Tasko.Persistence.Auth;
@@ -20,6 +22,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers (REST API)
 // -----------------------------
 builder.Services.AddControllers();
+builder.Services.AddScoped<ITaskRealtime, SignalRTaskRealtime>();
+
+// -----------------------------
+// SignalR
+// -----------------------------
+builder.Services.AddSignalR();
 
 // -----------------------------
 // HttpContextAccessor (нужен для CurrentStateService)
@@ -154,6 +162,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SignalRCors", policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed(_ => true); // для dev
+    });
+});
+
+
 var app = builder.Build();
 
 // -----------------------------
@@ -175,6 +196,8 @@ app.UseRequestLocalization(locOptions.Value);
 // Global exception middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseCors("SignalRCors");
+
 // Auth pipeline
 app.UseAuthentication();
 app.UseAuthorization();
@@ -182,4 +205,7 @@ app.UseAuthorization();
 // Map REST controllers
 app.MapControllers();
 
+app.MapHub<TaskHub>("/hubs/tasks");
+
 app.Run();
+

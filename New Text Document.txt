@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Tasko SignalR Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input { width: 800px; }
+    button { margin-left: 10px; }
+    pre { margin-top: 15px; background: #f4f4f4; padding: 10px; height: 300px; overflow: auto; }
+  </style>
+</head>
+<body>
+
+  <h2>Tasko SignalR Test</h2>
+
+  <div>
+    <label>Access token (JWT):</label><br/>
+    <input id="token" placeholder="paste access token here" />
+  </div>
+
+  <div style="margin-top:10px;">
+    <label>TaskId:</label>
+    <input id="taskId" value="1" style="width:120px;" />
+    <button id="connect">Connect & Join</button>
+  </div>
+
+  <pre id="log"></pre>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+  <script>
+    const logEl = document.getElementById("log");
+    const log = (m) => logEl.textContent += m + "\n";
+
+    document.getElementById("connect").onclick = async () => {
+      const token = document.getElementById("token").value.trim();
+      const taskId = parseInt(document.getElementById("taskId").value, 10);
+
+      if (!token) {
+        alert("Вставь access token");
+        return;
+      }
+
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5077/hubs/tasks", {
+          accessTokenFactory: () => token
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      connection.on("OfferCreated", data =>
+        log("OfferCreated ➜ " + JSON.stringify(data))
+      );
+
+      connection.on("TaskPublished", data =>
+        log("TaskPublished ➜ " + JSON.stringify(data))
+      );
+
+      connection.on("TaskAssigned", data =>
+        log("TaskAssigned ➜ " + JSON.stringify(data))
+      );
+
+      try {
+        await connection.start();
+        log("Connected ✅");
+
+        await connection.invoke("JoinTask", taskId);
+        log("Joined group task-" + taskId + " ✅");
+      } catch (err) {
+        log("ERROR ❌ " + err);
+      }
+    };
+  </script>
+
+</body>
+</html>
