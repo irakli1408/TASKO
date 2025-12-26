@@ -13,6 +13,8 @@ using Tasko.Application.Handlers.Tasks.Commands.AssignOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateTask;
 using Tasko.Application.Handlers.Tasks.Commands.PublishTask;
+using Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
+using Tasko.Application.Handlers.Tasks.Queries.GetTaskStats;
 
 namespace Tasko.API.Controllers.Tasks;
 
@@ -90,6 +92,25 @@ public sealed class TasksController : ApiControllerBase
         await Sender.Send(new MarkMessagesReadCommand(taskId, body.LastReadMessageId), ct);
         return NoContent();
     }
+
+
+    [HttpGet("{taskId:long}/offers")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<OfferDto>>> GetOffers(
+    [FromRoute] long taskId,
+    [FromQuery] int skip = 0,
+    [FromQuery] int take = 50,
+    CancellationToken ct = default)
+    => Ok(await Sender.Send(new GetTaskOffersQuery(taskId, skip, take), ct));
+
+    [HttpGet("{taskId:long}/stats")]
+    [Authorize]
+    public async Task<ActionResult<TaskStatsDto>> GetStats(
+        [FromRoute] long taskId,
+        CancellationToken ct)
+        => Ok(await Sender.Send(new GetTaskStatsQuery(taskId), ct));
 }
+
+
 
 
