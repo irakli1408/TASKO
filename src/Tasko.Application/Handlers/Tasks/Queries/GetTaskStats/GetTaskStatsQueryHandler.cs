@@ -7,7 +7,7 @@ using Tasko.Domain.Entities.Tasks;
 
 namespace Tasko.Application.Handlers.Tasks.Queries.GetTaskStats;
 
-public sealed class QueryHandler : IRequestHandler<GetTaskStatsQuery, TaskStatsDto>
+public sealed class GetTaskStatsQueryHandler : IRequestHandler<GetTaskStatsQuery, TaskStatsDto>
 {
     private readonly ITaskoDbContext _db;
     private readonly ICurrentStateService _current;
