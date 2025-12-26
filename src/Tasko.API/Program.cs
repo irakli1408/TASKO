@@ -199,6 +199,9 @@ if (app.Environment.IsDevelopment())
 // Routing должен быть ДО route-localization
 app.UseRouting();
 
+app.UseStaticFiles();
+
+
 // Localization: RouteDataRequestCultureProvider требует route values
 var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(locOptions.Value);

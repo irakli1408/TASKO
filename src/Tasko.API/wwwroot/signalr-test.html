@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tasko SignalR Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background:#111; color:#eee; padding:20px; }
+        input, button { padding:6px; margin:4px 0; }
+        #log { margin-top:20px; padding:10px; background:#222; height:320px; overflow-y:auto; border-radius:6px; }
+        .msg { margin-bottom:6px; border-bottom:1px solid #333; padding-bottom:4px; white-space:pre-wrap; }
+        .row { display:flex; gap:8px; align-items:center; }
+        .row input { flex:1; }
+    </style>
+</head>
+<body>
+
+<h2>Tasko SignalR Realtime Test</h2>
+
+<label>JWT token:</label><br/>
+<input id="token" style="width: 100%;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiaXJuaWtvbGVpc2h2aWxpQGdtYWlsLmNvbSIsInN1YiI6IjIiLCJlbWFpbCI6Imlybmlrb2xlaXNodmlsaUBnbWFpbC5jb20iLCJuYmYiOjE3NjY3NzQxOTYsImV4cCI6MTc2Njc3NTA5NiwiaXNzIjoiVGFza28iLCJhdWQiOiJUYXNrb0NsaWVudCJ9.t_fi7VcQ6F-RSPfX7s_fBaMuIsl9_mxqviuTQMb70v8" /><br/>
+
+<label>Task ID:</label><br/>
+<input id="taskId" type="number" placeholder="3" /><br/>
+
+<button onclick="connect()">Connect & Join Task</button>
+
+<hr/>
+
+<label>Send message via HUB:</label><br/>
+<div class="row">
+  <input id="message" placeholder="Message text" />
+  <button onclick="sendMessage()">Send</button>
+</div>
+
+<div id="log"></div>
+
+<script>
+    let connection = null;
+
+    function log(text) {
+        const el = document.createElement("div");
+        el.className = "msg";
+        el.textContent = text;
+        document.getElementById("log").appendChild(el);
+    }
+
+    async function connect() {
+        const token = document.getElementById("token").value.trim();
+        const taskId = document.getElementById("taskId").value;
+
+        if (!token || !taskId) {
+            alert("Token and TaskId required");
+            return;
+        }
+
+        const baseUrl = window.location.origin; // <-- same origin as API
+        const hubUrl = baseUrl + "/hubs/tasks";
+
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl(hubUrl, { accessTokenFactory: () => token })
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("MessageReceived", message => {
+            log("📩 MessageReceived:\n" + JSON.stringify(message, null, 2));
+        });
+
+        connection.onreconnecting(err => log("… reconnecting: " + err));
+        connection.onreconnected(() => log("✅ reconnected"));
+        connection.onclose(err => log("❌ closed: " + err));
+
+        try {
+            await connection.start();
+            log("✅ Connected to hub: " + hubUrl);
+
+            await connection.invoke("JoinTask", Number(taskId));
+            log("👥 Joined task " + taskId);
+        } catch (err) {
+            log("❌ Error: " + err);
+            alert("Connect failed. Check console/log for details.");
+        }
+    }
+
+    async function sendMessage() {
+        if (!connection || connection.state !== "Connected") {
+            alert("Not connected");
+            return;
+        }
+
+        const taskId = Number(document.getElementById("taskId").value);
+        const text = document.getElementById("message").value;
+
+        await connection.invoke("SendMessage", taskId, text);
+        log("➡ Sent via HUB: " + text);
+    }
+</script>
+
+</body>
+</html>

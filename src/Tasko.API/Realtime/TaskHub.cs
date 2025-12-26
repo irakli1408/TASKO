@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Security.Claims;
 using Tasko.Application.Abstractions.Persistence;
+using Tasko.Application.Handlers.Chats.Commands.SendTaskMessage;
 using Tasko.Domain.Entities.Chats;
 
 namespace Tasko.API.Realtime;
@@ -12,16 +14,17 @@ namespace Tasko.API.Realtime;
 public sealed class TaskHub : Hub
 {
     private readonly ITaskoDbContext _db;
-
+    private readonly ISender _sender;
     // анти-спам по событиям "печатает"
     private static readonly ConcurrentDictionary<string, DateTime> _typingThrottle = new();
 
     // какие taskId открыты у connection (для auto-stop typing)
     private static readonly ConcurrentDictionary<string, HashSet<long>> _joinedTasks = new();
 
-    public TaskHub(ITaskoDbContext db)
+    public TaskHub(ITaskoDbContext db, ISender sender)
     {
         _db = db;
+        _sender = sender;
     }
 
     public static string GroupName(long taskId) => $"task-{taskId}";
@@ -58,42 +61,8 @@ public sealed class TaskHub : Hub
         if (string.IsNullOrWhiteSpace(text))
             return;
 
-        var userIdStr = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(userIdStr) || !long.TryParse(userIdStr, out var userId))
-            throw new HubException("Unauthorized");
-
-        var task = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == taskId);
-        if (task is null) throw new HubException("Task not found.");
-
-        var isCreator = task.CreatedByUserId == userId;
-        var isAssigned = task.AssignedToUserId == userId;
-        var hasOffer = await _db.Offers.AsNoTracking()
-            .AnyAsync(x => x.TaskId == taskId && x.ExecutorUserId == userId);
-
-        if (!isCreator && !isAssigned && !hasOffer)
-            throw new HubException("Access denied.");
-
-        var email =
-            Context.User?.FindFirst(ClaimTypes.Email)?.Value ??
-            Context.User?.FindFirst("email")?.Value ??
-            "unknown";
-
-        var msg = new ChatMessage(taskId, userId, text.Trim());
-        _db.ChatMessages.Add(msg);
-        await _db.SaveChangesAsync();
-
-        var payload = new
-        {
-            id = msg.Id,
-            taskId,
-            senderUserId = userId,
-            senderEmail = email,
-            text = msg.Text,
-            createdAtUtc = msg.CreatedAtUtc
-        };
-
-        await Clients.Group(GroupName(taskId))
-            .SendAsync("MessageReceived", payload);
+        // ✅ One source of truth: same flow as REST (Handler does DB + realtime)
+        await _sender.Send(new SendTaskMessageCommand(taskId, text.Trim()));
     }
 
     // -----------------------------
@@ -165,3 +134,4 @@ public sealed class TaskHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 }
+
