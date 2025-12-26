@@ -1,5 +1,4 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -22,12 +21,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers (REST API)
 // -----------------------------
 builder.Services.AddControllers();
-builder.Services.AddScoped<ITaskRealtime, SignalRTaskRealtime>();
 
 // -----------------------------
-// SignalR
+// SignalR + Realtime
 // -----------------------------
 builder.Services.AddSignalR();
+builder.Services.AddScoped<ITaskRealtime, SignalRTaskRealtime>();
+builder.Services.AddScoped<IChatRealtime, SignalRChatRealtime>();
 
 // -----------------------------
 // HttpContextAccessor (нужен для CurrentStateService)
@@ -128,7 +128,8 @@ var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
     {
         o.TokenValidationParameters = new()
@@ -137,6 +138,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateIssuerSigningKey = true,
             ValidateLifetime = true,
+
             ValidIssuer = jwt.Issuer,
             ValidAudience = jwt.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
@@ -146,14 +148,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = System.Security.Claims.ClaimTypes.Role
         };
 
-        // на будущее для SignalR (/hubs)
+        // ✅ КЛЮЧЕВОЕ: токен для SignalR приходит через query string "access_token"
         o.Events = new JwtBearerEvents
         {
             OnMessageReceived = ctx =>
             {
-                var token = ctx.Request.Query["access_token"];
-                if (!string.IsNullOrEmpty(token) && ctx.HttpContext.Request.Path.StartsWithSegments("/hubs"))
-                    ctx.Token = token;
+                var accessToken = ctx.Request.Query["access_token"];
+                var path = ctx.HttpContext.Request.Path;
+
+                // строго под твой хаб:
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs/tasks"))
+                {
+                    ctx.Token = accessToken;
+                }
 
                 return Task.CompletedTask;
             }
@@ -162,6 +170,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// -----------------------------
+// CORS for SignalR (dev)
+// -----------------------------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("SignalRCors", policy =>
@@ -173,7 +184,6 @@ builder.Services.AddCors(options =>
             .SetIsOriginAllowed(_ => true); // для dev
     });
 });
-
 
 var app = builder.Build();
 
@@ -205,7 +215,7 @@ app.UseAuthorization();
 // Map REST controllers
 app.MapControllers();
 
+// Map SignalR hub
 app.MapHub<TaskHub>("/hubs/tasks");
 
 app.Run();
-

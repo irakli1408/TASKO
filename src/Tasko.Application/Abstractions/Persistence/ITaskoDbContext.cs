@@ -15,6 +15,8 @@ public interface ITaskoDbContext
 
 
     DbSet<ChatMessage> ChatMessages { get; }
+    DbSet<ChatReadState> ChatReadStates { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

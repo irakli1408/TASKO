@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Tasko.Application.Abstractions.Persistence;
-using Tasko.Domain.Entities.Chats;
+using Tasko.Application.Handlers.Chats.Commands.SendTaskMessage;
 
 namespace Tasko.API.Realtime;
 
@@ -11,24 +12,32 @@ namespace Tasko.API.Realtime;
 public sealed class TaskHub : Hub
 {
     private readonly ITaskoDbContext _db;
+    private readonly ISender _sender;
 
-    public TaskHub(ITaskoDbContext db)
+    public TaskHub(ITaskoDbContext db, ISender sender)
     {
         _db = db;
+        _sender = sender;
     }
 
     public static string GroupName(long taskId) => $"task-{taskId}";
 
+    private bool TryGetUserId(out long userId)
+    {
+        userId = 0;
+        var userIdStr =
+            Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? Context.User?.FindFirstValue("sub");
+
+        return !string.IsNullOrWhiteSpace(userIdStr) && long.TryParse(userIdStr, out userId);
+    }
+
     public async Task JoinTask(long taskId)
     {
-        var userIdStr = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(userIdStr) || !long.TryParse(userIdStr, out var userId))
+        if (!TryGetUserId(out var userId))
             throw new HubException("Unauthorized");
 
-        var task = await _db.Tasks
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == taskId);
-
+        var task = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == taskId);
         if (task is null)
             throw new HubException("Task not found.");
 
@@ -42,46 +51,11 @@ public sealed class TaskHub : Hub
 
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(taskId));
     }
+
+    // Опционально: оставить для совместимости, но без записи в БД тут!
     public async Task SendMessage(long taskId, string text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-            return;
-
-        var userIdStr = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(userIdStr) || !long.TryParse(userIdStr, out var userId))
-            throw new HubException("Unauthorized");
-
-        var task = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == taskId);
-        if (task is null) throw new HubException("Task not found.");
-
-        var isCreator = task.CreatedByUserId == userId;
-        var isAssigned = task.AssignedToUserId == userId;
-        var hasOffer = await _db.Offers.AsNoTracking()
-            .AnyAsync(x => x.TaskId == taskId && x.ExecutorUserId == userId);
-
-        if (!isCreator && !isAssigned && !hasOffer)
-            throw new HubException("Access denied.");
-
-        var email =
-            Context.User?.FindFirst(ClaimTypes.Email)?.Value ??
-            Context.User?.FindFirst("email")?.Value ??
-            "unknown";
-
-        var msg = new ChatMessage(taskId, userId, text.Trim());
-        _db.ChatMessages.Add(msg);
-        await _db.SaveChangesAsync();
-
-        var payload = new
-        {
-            id = msg.Id,
-            taskId,
-            senderUserId = userId,
-            senderEmail = email,
-            text = msg.Text,
-            createdAtUtc = msg.CreatedAtUtc
-        };
-
-        await Clients.Group(GroupName(taskId))
-            .SendAsync("MessageReceived", payload);
+        // Handler сам сохранит и сам разошлёт MessageReceived
+        await _sender.Send(new SendTaskMessageCommand(taskId, text), CancellationToken.None);
     }
 }
