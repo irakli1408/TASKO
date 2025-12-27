@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
+using Tasko.Application.Abstractions.Services;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
 
@@ -10,11 +11,13 @@ public sealed class GetTaskOffersQueryHandler : IRequestHandler<GetTaskOffersQue
 {
     private readonly ITaskoDbContext _db;
     private readonly ICurrentStateService _current;
+    private readonly ITaskViewService _taskViewService;
 
-    public GetTaskOffersQueryHandler(ITaskoDbContext db, ICurrentStateService current)
+    public GetTaskOffersQueryHandler(ITaskoDbContext db, ICurrentStateService current, ITaskViewService taskViewService)
     {
         _db = db;
         _current = current;
+        _taskViewService = taskViewService;
     }
 
     public async Task<IReadOnlyList<OfferDto>> Handle(GetTaskOffersQuery request, CancellationToken ct)
@@ -41,6 +44,13 @@ public sealed class GetTaskOffersQueryHandler : IRequestHandler<GetTaskOffersQue
             hasOffer;
 
         if (!canRead) throw new UnauthorizedAccessException();
+
+        // ✅ Views = сколько уникальных мастеров посмотрели заказ (метрика для заказчика)
+        // Считаем только когда НЕ владелец task (т.е. мастер)
+        if (task.CreatedByUserId != userId)
+        {
+            await _taskViewService.TrackTaskViewAsync(task.Id, userId, ct);
+        }
 
         // заказчик видит все offers, мастер — только свой (чтобы не видеть конкурентов)
         var q = _db.Offers.AsNoTracking().Where(x => x.TaskId == request.TaskId);

@@ -11,6 +11,8 @@ using Tasko.API.Realtime;
 using Tasko.Application.Abstractions.Auth;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Realtime;
+using Tasko.Application.Abstractions.Services;
+using Tasko.Application.Services;
 using Tasko.Common.ErrorHandler.Middleware;
 using Tasko.Common.Tools.Extensions;
 using Tasko.Persistence.Auth;
@@ -28,6 +30,9 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ITaskRealtime, SignalRTaskRealtime>();
 builder.Services.AddScoped<IChatRealtime, SignalRChatRealtime>();
+
+
+builder.Services.AddScoped<ITaskViewService, TaskViewService>();
 
 // -----------------------------
 // HttpContextAccessor (нужен для CurrentStateService)
