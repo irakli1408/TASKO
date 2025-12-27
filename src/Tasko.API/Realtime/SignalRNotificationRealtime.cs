@@ -17,4 +17,9 @@ public sealed class SignalRNotificationRealtime : INotificationRealtime
         => _hub.Clients
             .Group(NotificationsHub.UserGroup(userId))
             .SendAsync("notification.created", dto, ct);
+
+    public Task UnreadCountChanged(long userId, int count, CancellationToken ct)
+        => _hub.Clients
+            .Group(NotificationsHub.UserGroup(userId))
+            .SendAsync("notifications.unreadCount", new { count }, ct);
 }
