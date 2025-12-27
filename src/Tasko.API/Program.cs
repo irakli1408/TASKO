@@ -35,7 +35,7 @@ builder.Services.AddScoped<IChatRealtime, SignalRChatRealtime>();
 builder.Services.AddScoped<ITaskViewService, TaskViewService>();
 
 builder.Services.AddScoped<INotificationService, NotificationService>();
-
+builder.Services.AddScoped<INotificationRealtime, SignalRNotificationRealtime>();
 
 // -----------------------------
 // HttpContextAccessor (нужен для CurrentStateService)
@@ -228,5 +228,7 @@ app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<TaskHub>("/hubs/tasks");
+app.MapHub<NotificationsHub>("/hubs/notifications");
+
 
 app.Run();
