@@ -27,4 +27,9 @@ public sealed class SignalRNotificationRealtime : INotificationRealtime
         => _hub.Clients
             .Group(NotificationsHub.UserGroup(userId))
             .SendAsync("notification.read", new { id = notificationId }, ct);
+
+    public Task NotificationsReadAll(long userId, CancellationToken ct)
+        => _hub.Clients
+            .Group(NotificationsHub.UserGroup(userId))
+            .SendAsync("notifications.readAll", new { }, ct);
 }
