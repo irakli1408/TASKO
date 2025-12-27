@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Realtime;
+using Tasko.Application.Abstractions.Services;
 using Tasko.Common.CurrentState;
 
 namespace Tasko.Application.Handlers.Tasks.Commands.AssignOffer;
@@ -11,12 +12,18 @@ public sealed class AssignOfferCommandHandler : IRequestHandler<AssignOfferComma
     private readonly ITaskoDbContext _db;
     private readonly ICurrentStateService _current;
     private readonly ITaskRealtime _realtime;
+    private readonly INotificationService _notificationService;
 
-    public AssignOfferCommandHandler(ITaskoDbContext db, ICurrentStateService current, ITaskRealtime realtime)
+    public AssignOfferCommandHandler(
+        ITaskoDbContext db,
+        ICurrentStateService current,
+        ITaskRealtime realtime,
+        INotificationService notificationService)
     {
         _db = db;
         _current = current;
         _realtime = realtime;
+        _notificationService = notificationService;
     }
 
     public async Task Handle(AssignOfferCommand request, CancellationToken ct)
@@ -36,6 +43,13 @@ public sealed class AssignOfferCommandHandler : IRequestHandler<AssignOfferComma
         task.Assign(offer.ExecutorUserId);
 
         await _db.SaveChangesAsync(ct);
+
+        // 🔔 OfferAccepted → мастеру
+        await _notificationService.NotifyOfferAcceptedAsync(
+            taskId: task.Id,
+            offerId: offer.Id,
+            executorUserId: offer.ExecutorUserId,
+            ct: ct);
 
         await _realtime.TaskAssigned(task.Id, offer.ExecutorUserId, ct);
     }

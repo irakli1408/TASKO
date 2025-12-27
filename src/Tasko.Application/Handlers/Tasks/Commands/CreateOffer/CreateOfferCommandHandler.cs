@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Realtime;
+using Tasko.Application.Abstractions.Services;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
 using Tasko.Domain.Entities.Tasks;
@@ -13,12 +14,18 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
     private readonly ITaskoDbContext _db;
     private readonly ICurrentStateService _current;
     private readonly ITaskRealtime _realtime;
+    private readonly INotificationService _notificationService;
 
-    public CreateOfferCommandHandler(ITaskoDbContext db, ICurrentStateService current, ITaskRealtime realtime)
+    public CreateOfferCommandHandler(
+        ITaskoDbContext db,
+        ICurrentStateService current,
+        ITaskRealtime realtime,
+        INotificationService notificationService)
     {
         _db = db;
         _current = current;
         _realtime = realtime;
+        _notificationService = notificationService;
     }
 
     public async Task<OfferDto> Handle(CreateOfferCommand request, CancellationToken ct)
@@ -39,6 +46,13 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
 
         _db.Offers.Add(offer);
         await _db.SaveChangesAsync(ct);
+
+        // ✅ уведомление заказчику о новом оффере
+        await _notificationService.NotifyOfferCreatedAsync(
+            taskId: request.TaskId,
+            offerId: offer.Id,
+            executorUserId: userId,
+            ct: ct);
 
         var dto = new OfferDto
         {

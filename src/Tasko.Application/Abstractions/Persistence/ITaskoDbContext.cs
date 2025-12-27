@@ -2,6 +2,7 @@
 using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
 using Tasko.Domain.Entities.Chats;
+using Tasko.Domain.Entities.Notifications;
 using Tasko.Domain.Entities.Tasks;
 
 namespace Tasko.Application.Abstractions.Persistence;
@@ -18,6 +19,9 @@ public interface ITaskoDbContext
     DbSet<ChatReadState> ChatReadStates { get; }
 
     DbSet<TaskView> TaskViews { get; }
+
+    DbSet<Notification> Notifications { get; }
+
 
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

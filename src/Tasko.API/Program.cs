@@ -34,6 +34,9 @@ builder.Services.AddScoped<IChatRealtime, SignalRChatRealtime>();
 
 builder.Services.AddScoped<ITaskViewService, TaskViewService>();
 
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+
 // -----------------------------
 // HttpContextAccessor (нужен для CurrentStateService)
 // -----------------------------

@@ -3,6 +3,7 @@ using Tasko.Application.Abstractions.Persistence;
 using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
 using Tasko.Domain.Entities.Chats;
+using Tasko.Domain.Entities.Notifications;
 using Tasko.Domain.Entities.Tasks;
 
 public sealed class TaskoDbContext : DbContext, ITaskoDbContext
@@ -20,6 +21,8 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
     public DbSet<ChatReadState> ChatReadStates => Set<ChatReadState>();
 
     public DbSet<TaskView> TaskViews => Set<TaskView>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
