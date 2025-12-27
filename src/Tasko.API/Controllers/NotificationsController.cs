@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tasko.Application.Handlers.Notifications.Commands.MarkNotificationRead;
 using Tasko.Application.Handlers.Notifications.Queries.GetMyNotifications;
+using Tasko.Application.Handlers.Notifications.Queries.GetUnreadCount;
 
 namespace Tasko.API.Controllers;
 
@@ -25,4 +26,8 @@ public sealed class NotificationsController : ControllerBase
     [HttpPost("{id:long}/read")]
     public Task MarkRead([FromRoute] long id, CancellationToken ct)
         => _mediator.Send(new MarkNotificationReadCommand(id), ct);
+
+    [HttpGet("unread-count")]
+    public Task<NotificationsUnreadCountDto> GetUnreadCount(CancellationToken ct)
+    => _mediator.Send(new GetUnreadCountQuery(), ct);
 }
