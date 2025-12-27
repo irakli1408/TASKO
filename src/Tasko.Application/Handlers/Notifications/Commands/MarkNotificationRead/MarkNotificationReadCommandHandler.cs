@@ -35,6 +35,10 @@ public sealed class MarkNotificationReadCommandHandler : IRequestHandler<MarkNot
         n.MarkRead();
         await _db.SaveChangesAsync(ct);
 
+        // ✅ точечный realtime: это уведомление стало прочитанным
+        await _realtime.NotificationRead(userId, n.Id, ct);
+
+        // ✅ обновляем бейдж
         var unread = await _db.Notifications
             .AsNoTracking()
             .CountAsync(x => x.UserId == userId && !x.IsRead, ct);

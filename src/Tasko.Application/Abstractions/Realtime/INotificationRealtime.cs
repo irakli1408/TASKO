@@ -6,6 +6,9 @@ public interface INotificationRealtime
 {
     Task NotificationCreated(long userId, NotificationDto dto, CancellationToken ct);
 
-    // realtime badge
+    // badge
     Task UnreadCountChanged(long userId, int count, CancellationToken ct);
+
+    // ✅ specific notification read
+    Task NotificationRead(long userId, long notificationId, CancellationToken ct);
 }
