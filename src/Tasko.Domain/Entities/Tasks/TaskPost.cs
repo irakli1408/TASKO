@@ -21,6 +21,8 @@ public sealed class TaskPost
     public string Title { get; private set; } = null!;
     public string? Description { get; private set; }
     public decimal? Budget { get; private set; }
+    public int ViewsCount { get; private set; }
+    public void IncrementViewsCount() => ViewsCount++;
 
     public TaskStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }

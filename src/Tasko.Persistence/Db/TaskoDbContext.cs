@@ -19,6 +19,9 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>(); 
     public DbSet<ChatReadState> ChatReadStates => Set<ChatReadState>();
 
+    public DbSet<TaskView> TaskViews => Set<TaskView>();
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TaskoDbContext).Assembly);

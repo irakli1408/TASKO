@@ -20,6 +20,8 @@ public sealed class TaskPostConfiguration : IEntityTypeConfiguration<TaskPost>
         e.Property(x => x.Status).IsRequired();
         e.Property(x => x.CreatedAtUtc).IsRequired();
 
+        e.Property(x => x.ViewsCount).HasDefaultValue(0);
+
         e.HasIndex(x => x.CreatedByUserId);
         e.HasIndex(x => x.AssignedToUserId);
         e.HasIndex(x => x.Status);
