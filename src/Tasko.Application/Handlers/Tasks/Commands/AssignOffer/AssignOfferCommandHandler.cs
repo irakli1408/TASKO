@@ -44,10 +44,10 @@ public sealed class AssignOfferCommandHandler : IRequestHandler<AssignOfferComma
 
         await _db.SaveChangesAsync(ct);
 
-        // 🔔 OfferAccepted → мастеру
-        await _notificationService.NotifyOfferAcceptedAsync(
+        // 🔔 TaskAssigned → заказчику + мастеру
+        await _notificationService.NotifyTaskAssignedAsync(
             taskId: task.Id,
-            offerId: offer.Id,
+            customerUserId: task.CreatedByUserId,
             executorUserId: offer.ExecutorUserId,
             ct: ct);
 

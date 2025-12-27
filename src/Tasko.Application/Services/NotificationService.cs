@@ -23,8 +23,6 @@ public sealed class NotificationService : INotificationService
 
         if (task is null) return;
 
-        var customerId = task.CreatedByUserId;
-
         var dataJson = JsonSerializer.Serialize(new
         {
             taskId,
@@ -32,36 +30,44 @@ public sealed class NotificationService : INotificationService
             executorUserId
         });
 
-        var n = new Notification(
-            userId: customerId,
+        _db.Notifications.Add(new Notification(
+            userId: task.CreatedByUserId,
             type: NotificationType.OfferCreated,
             title: "New offer on your task",
             body: "A master has responded to your task.",
             dataJson: dataJson
-        );
+        ));
 
-        _db.Notifications.Add(n);
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task NotifyOfferAcceptedAsync(long taskId, long offerId, long executorUserId, CancellationToken ct)
+    public async Task NotifyTaskAssignedAsync(long taskId, long customerUserId, long executorUserId, CancellationToken ct)
     {
         var dataJson = JsonSerializer.Serialize(new
         {
             taskId,
-            offerId,
+            customerUserId,
             executorUserId
         });
 
-        var n = new Notification(
-            userId: executorUserId,
-            type: NotificationType.OfferAccepted,
-            title: "Your offer was accepted",
-            body: "The customer accepted your offer. You have been assigned to the task.",
+        // заказчику
+        _db.Notifications.Add(new Notification(
+            userId: customerUserId,
+            type: NotificationType.TaskAssigned,
+            title: "Executor assigned",
+            body: "You have assigned a master to your task.",
             dataJson: dataJson
-        );
+        ));
 
-        _db.Notifications.Add(n);
+        // мастеру
+        _db.Notifications.Add(new Notification(
+            userId: executorUserId,
+            type: NotificationType.TaskAssigned,
+            title: "You were assigned to a task",
+            body: "A customer has assigned you to their task.",
+            dataJson: dataJson
+        ));
+
         await _db.SaveChangesAsync(ct);
     }
 }
