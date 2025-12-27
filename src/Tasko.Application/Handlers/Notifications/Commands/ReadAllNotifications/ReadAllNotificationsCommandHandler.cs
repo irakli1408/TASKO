@@ -4,15 +4,15 @@ using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Realtime;
 using Tasko.Common.CurrentState;
 
-namespace Tasko.Application.Handlers.Notifications.Commands.MarkNotificationRead;
+namespace Tasko.Application.Handlers.Notifications.Commands.ReadAllNotifications;
 
-public sealed class MarkNotificationReadCommandHandler : IRequestHandler<MarkNotificationReadCommand>
+public sealed class ReadAllNotificationsCommandHandler : IRequestHandler<ReadAllNotificationsCommand>
 {
     private readonly ITaskoDbContext _db;
     private readonly ICurrentStateService _current;
     private readonly INotificationRealtime _realtime;
 
-    public MarkNotificationReadCommandHandler(
+    public ReadAllNotificationsCommandHandler(
         ITaskoDbContext db,
         ICurrentStateService current,
         INotificationRealtime realtime)
@@ -22,19 +22,19 @@ public sealed class MarkNotificationReadCommandHandler : IRequestHandler<MarkNot
         _realtime = realtime;
     }
 
-    public async Task Handle(MarkNotificationReadCommand request, CancellationToken ct)
+    public async Task Handle(ReadAllNotificationsCommand request, CancellationToken ct)
     {
         if (!_current.IsAuthenticated) throw new UnauthorizedAccessException();
         if (!long.TryParse(_current.UserId, out var userId)) throw new UnauthorizedAccessException();
 
-        var n = await _db.Notifications.FirstOrDefaultAsync(x => x.Id == request.NotificationId, ct)
-            ?? throw new KeyNotFoundException("Notification not found.");
+        // читаем всё одним UPDATE (без загрузки сущностей)
+        await _db.Notifications
+            .Where(x => x.UserId == userId && !x.IsRead)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.IsRead, true)
+                .SetProperty(x => x.ReadAtUtc, DateTime.UtcNow), ct);
 
-        if (n.UserId != userId) throw new UnauthorizedAccessException();
-
-        n.MarkRead();
-        await _db.SaveChangesAsync(ct);
-
+        // unread-count после read-all = 0, но пересчитаем честно
         var unread = await _db.Notifications
             .AsNoTracking()
             .CountAsync(x => x.UserId == userId && !x.IsRead, ct);
