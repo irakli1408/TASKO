@@ -62,7 +62,12 @@
         public DateTime CreatedAtUtc { get; private set; }
         public DateTime? LastOnlineAtUtc { get; private set; }
 
-        // Methods
+        public int? ExperienceYears { get; private set; }
+
+        public void UpdateExecutorProfile(int? experienceYears)
+        {
+            ExperienceYears = experienceYears;
+        }
         public void UpdateLastOnline() => LastOnlineAtUtc = DateTime.UtcNow;
 
         public void UpdateProfile(string firstName, string lastName, string phone, string? about)
@@ -79,7 +84,7 @@
         {
             RoleType = RoleType switch
             {
-                UserRoleType.Customer => UserRoleType.Executor,
+                UserRoleType.Customer => UserRoleType.Both,
                 UserRoleType.Executor => UserRoleType.Executor,
                 _ => UserRoleType.Both
             };
@@ -87,8 +92,15 @@
             LocationType = location;
             IsExecutorActive = true;
         }
+        public void SetExecutorActive(bool isActive)
+        {
+            // Нельзя включить мастера, если пользователь вообще не имеет роли мастера
+            if (isActive && RoleType is UserRoleType.Customer)
+                throw new InvalidOperationException("User is not an executor.");
 
-        public void DisableExecutor() => IsExecutorActive = false;
+            IsExecutorActive = isActive;
+        }
+        public void DisableExecutor() => SetExecutorActive(false);
 
         public void UpdateLocation(LocationType location) => LocationType = location;
 
