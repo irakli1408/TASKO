@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
@@ -22,12 +23,25 @@ public sealed class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand
         if (!_current.IsAuthenticated) throw new UnauthorizedAccessException();
         if (!long.TryParse(_current.UserId, out var userId)) throw new UnauthorizedAccessException();
 
+        // validate category exists + active + leaf (ParentId != null)
+        var cat = await _db.Categories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == request.CategoryId && x.IsActive, ct);
+
+        if (cat is null)
+            throw new InvalidOperationException("Category not found.");
+
+        if (cat.ParentId is null)
+            throw new InvalidOperationException("You must select a subcategory (leaf).");
+
         var entity = new TaskPost(
             createdByUserId: userId,
             title: request.Title.Trim(),
             description: request.Description?.Trim(),
             budget: request.Budget
         );
+
+        entity.SetCategory(request.CategoryId);
 
         _db.Tasks.Add(entity);
         await _db.SaveChangesAsync(ct);
@@ -41,7 +55,8 @@ public sealed class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand
             Description = entity.Description,
             Budget = entity.Budget,
             Status = entity.Status.ToString(),
-            CreatedAtUtc = entity.CreatedAtUtc
+            CreatedAtUtc = entity.CreatedAtUtc,
+            CategoryId = entity.CategoryId
         };
     }
 }
