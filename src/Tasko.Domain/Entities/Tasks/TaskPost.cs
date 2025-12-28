@@ -1,4 +1,6 @@
-﻿namespace Tasko.Domain.Entities.Tasks;
+﻿using Tasko.Domain.Entities.Categories;
+
+namespace Tasko.Domain.Entities.Tasks;
 
 public sealed class TaskPost
 {
@@ -26,7 +28,16 @@ public sealed class TaskPost
 
     public TaskStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public long CategoryId { get; private set; }
+    public Category Category { get; private set; } = null!;
 
+    public void SetCategory(long categoryId)
+    {
+        if (categoryId <= 0)
+            throw new ArgumentOutOfRangeException(nameof(categoryId));
+
+        CategoryId = categoryId;
+    }
     public void Publish()
     {
         if (Status != TaskStatus.Draft)

@@ -22,6 +22,15 @@ public sealed class TaskPostConfiguration : IEntityTypeConfiguration<TaskPost>
 
         e.Property(x => x.ViewsCount).HasDefaultValue(0);
 
+        e.Property(x => x.CategoryId)
+          .IsRequired();
+
+        e.HasOne(x => x.Category)
+            .WithMany()
+            .HasForeignKey(x => x.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        e.HasIndex(x => x.CategoryId);
         e.HasIndex(x => x.CreatedByUserId);
         e.HasIndex(x => x.AssignedToUserId);
         e.HasIndex(x => x.Status);
