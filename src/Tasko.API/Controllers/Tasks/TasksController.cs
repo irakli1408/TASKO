@@ -13,6 +13,7 @@ using Tasko.Application.Handlers.Tasks.Commands.AssignOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateTask;
 using Tasko.Application.Handlers.Tasks.Commands.PublishTask;
+using Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskStats;
 
@@ -109,6 +110,13 @@ public sealed class TasksController : ApiControllerBase
         [FromRoute] long taskId,
         CancellationToken ct)
         => Ok(await Sender.Send(new GetTaskStatsQuery(taskId), ct));
+
+    [HttpGet("{taskId:long}")]
+    public async Task<IActionResult> GetById([FromRoute] long taskId, CancellationToken ct)
+    {
+        var dto = await Sender.Send(new GetTaskByIdQuery(taskId), ct);
+        return Ok(dto);
+    }
 }
 
 

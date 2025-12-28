@@ -62,12 +62,14 @@ public sealed class TaskHub : Hub
     // ✅ Добавь этот метод (твой тест его вызывает)
     public async Task LeaveTask(long taskId)
     {
-        var userIdStr = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdStr = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(userIdStr) || !long.TryParse(userIdStr, out var userId))
             throw new HubException("Unauthorized");
 
+        // 1) Убираем соединение из группы таска
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(taskId));
 
+        // 2) Убираем taskId из локального набора (если используешь)
         if (_joinedTasks.TryGetValue(Context.ConnectionId, out var set))
         {
             lock (set)
@@ -78,9 +80,20 @@ public sealed class TaskHub : Hub
             }
         }
 
-        // ✅ ВАЖНО ДЛЯ MUTE
+        // 3) ВАЖНО: принудительно "TypingStop", чтобы у других не залипало "печатает"
+        await Clients.OthersInGroup(GroupName(taskId))
+            .SendAsync("UserTyping", new
+            {
+                taskId,
+                userId,
+                isTyping = false,
+                atUtc = DateTime.UtcNow
+            });
+
+        // 4) Presence для mute
         _presence.LeaveTask(userId, taskId, Context.ConnectionId);
     }
+
 
     public async Task SendMessage(long taskId, string text)
     {
