@@ -21,69 +21,92 @@ public sealed class NotificationService : INotificationService
 
     public async Task NotifyOfferCreatedAsync(long taskId, long offerId, long executorUserId, CancellationToken ct)
     {
-        var task = await _db.Tasks
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == taskId, ct);
-
+        var task = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == taskId, ct);
         if (task is null) return;
 
         var customerUserId = task.CreatedByUserId;
 
-        var dataJson = JsonSerializer.Serialize(new
-        {
-            taskId,
-            offerId,
-            executorUserId
-        });
-
         var n = new Notification(
-            userId: customerUserId,
-            type: NotificationType.OfferCreated,
-            title: "New offer on your task",
-            body: "A master has responded to your task.",
-            dataJson: dataJson
+            customerUserId,
+            NotificationType.OfferCreated,
+            "New offer on your task",
+            "A master has responded to your task.",
+            JsonSerializer.Serialize(new { taskId, offerId, executorUserId })
         );
 
         _db.Notifications.Add(n);
         await _db.SaveChangesAsync(ct);
 
-        // ✅ realtime push
         await _realtime.NotificationCreated(customerUserId, ToDto(n), ct);
+        await PushUnread(customerUserId, ct);
     }
 
     public async Task NotifyTaskAssignedAsync(long taskId, long customerUserId, long executorUserId, CancellationToken ct)
     {
-        var dataJson = JsonSerializer.Serialize(new
-        {
-            taskId,
-            customerUserId,
-            executorUserId
-        });
+        var data = JsonSerializer.Serialize(new { taskId, customerUserId, executorUserId });
 
         var nCustomer = new Notification(
-            userId: customerUserId,
-            type: NotificationType.TaskAssigned,
-            title: "Executor assigned",
-            body: "You have assigned a master to your task.",
-            dataJson: dataJson
+            customerUserId,
+            NotificationType.TaskAssigned,
+            "Executor assigned",
+            "You have assigned a master to your task.",
+            data
         );
 
         var nExecutor = new Notification(
-            userId: executorUserId,
-            type: NotificationType.TaskAssigned,
-            title: "You were assigned to a task",
-            body: "A customer has assigned you to their task.",
-            dataJson: dataJson
+            executorUserId,
+            NotificationType.TaskAssigned,
+            "You were assigned to a task",
+            "A customer has assigned you to their task.",
+            data
         );
 
-        _db.Notifications.Add(nCustomer);
-        _db.Notifications.Add(nExecutor);
-
+        _db.Notifications.AddRange(nCustomer, nExecutor);
         await _db.SaveChangesAsync(ct);
 
-        // ✅ realtime push (двум пользователям)
         await _realtime.NotificationCreated(customerUserId, ToDto(nCustomer), ct);
         await _realtime.NotificationCreated(executorUserId, ToDto(nExecutor), ct);
+
+        await PushUnread(customerUserId, ct);
+        await PushUnread(executorUserId, ct);
+    }
+
+    public async Task NotifyMessageSentAsync(
+        long taskId,
+        long messageId,
+        long senderUserId,
+        long recipientUserId,
+        string preview,
+        CancellationToken ct)
+    {
+        var n = new Notification(
+            recipientUserId,
+            NotificationType.MessageSent,
+            "New message",
+            preview,
+            JsonSerializer.Serialize(new
+            {
+                taskId,
+                messageId,
+                senderUserId,
+                recipientUserId
+            })
+        );
+
+        _db.Notifications.Add(n);
+        await _db.SaveChangesAsync(ct);
+
+        await _realtime.NotificationCreated(recipientUserId, ToDto(n), ct);
+        await PushUnread(recipientUserId, ct);
+    }
+
+    private async Task PushUnread(long userId, CancellationToken ct)
+    {
+        var unread = await _db.Notifications
+            .AsNoTracking()
+            .CountAsync(x => x.UserId == userId && !x.IsRead, ct);
+
+        await _realtime.UnreadCountChanged(userId, unread, ct);
     }
 
     private static NotificationDto ToDto(Notification n) => new()
