@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
-using Tasko.Application.Abstractions.Realtime;
+using Tasko.Application.Abstractions.Realtime;   // ✅ добавить
 using Tasko.Application.Abstractions.Services;
 using Tasko.Application.DTO.Notifications;
 using Tasko.Domain.Entities.Notifications;
@@ -12,11 +12,13 @@ public sealed class NotificationService : INotificationService
 {
     private readonly ITaskoDbContext _db;
     private readonly INotificationRealtime _realtime;
+    private readonly IChatPresence _presence;     // ✅ добавить
 
-    public NotificationService(ITaskoDbContext db, INotificationRealtime realtime)
+    public NotificationService(ITaskoDbContext db, INotificationRealtime realtime, IChatPresence presence) // ✅ изменить
     {
         _db = db;
         _realtime = realtime;
+        _presence = presence;
     }
 
     public async Task NotifyOfferCreatedAsync(long taskId, long offerId, long executorUserId, CancellationToken ct)
@@ -79,6 +81,10 @@ public sealed class NotificationService : INotificationService
         string preview,
         CancellationToken ct)
     {
+        // ✅ MUTE: если получатель уже в этом чате — НЕ создаём уведомление и НЕ пушим unread-count
+        if (_presence.IsInTaskChat(recipientUserId, taskId))
+            return;
+
         var n = new Notification(
             recipientUserId,
             NotificationType.MessageSent,

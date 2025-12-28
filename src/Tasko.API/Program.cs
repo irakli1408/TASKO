@@ -28,9 +28,12 @@ builder.Services.AddControllers();
 // SignalR + Realtime
 // -----------------------------
 builder.Services.AddSignalR();
+
+// ✅ Mute-flow presence (должен быть Singleton)
+builder.Services.AddSingleton<IChatPresence, InMemoryChatPresence>();
+
 builder.Services.AddScoped<ITaskRealtime, SignalRTaskRealtime>();
 builder.Services.AddScoped<IChatRealtime, SignalRChatRealtime>();
-
 
 builder.Services.AddScoped<ITaskViewService, TaskViewService>();
 
@@ -164,9 +167,10 @@ builder.Services
                 var accessToken = ctx.Request.Query["access_token"];
                 var path = ctx.HttpContext.Request.Path;
 
-                // строго под твой хаб:
+                // ✅ разрешаем токен и для tasks hub, и для notifications hub
                 if (!string.IsNullOrEmpty(accessToken) &&
-                    path.StartsWithSegments("/hubs/tasks"))
+                    (path.StartsWithSegments("/hubs/tasks") ||
+                     path.StartsWithSegments("/hubs/notifications")))
                 {
                     ctx.Token = accessToken;
                 }
@@ -209,7 +213,6 @@ app.UseRouting();
 
 app.UseStaticFiles();
 
-
 // Localization: RouteDataRequestCultureProvider требует route values
 var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(locOptions.Value);
@@ -229,6 +232,5 @@ app.MapControllers();
 // Map SignalR hub
 app.MapHub<TaskHub>("/hubs/tasks");
 app.MapHub<NotificationsHub>("/hubs/notifications");
-
 
 app.Run();

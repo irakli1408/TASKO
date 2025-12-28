@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tasko SignalR Chat Test</title>
+  <style>
+    body{font-family:Arial;margin:20px}
+    input{width:700px;max-width:95%}
+    .row{margin:10px 0}
+    #log{white-space:pre-wrap;background:#111;color:#ddd;padding:12px;border-radius:8px;min-height:200px}
+    button{padding:8px 12px}
+  </style>
+</head>
+<body>
+  <h2>Tasko SignalR Realtime Test (Chat)</h2>
+
+  <div class="row">
+    <div>JWT token:</div>
+    <input id="jwt" placeholder="paste JWT here" />
+  </div>
+
+  <div class="row">
+    <div>Task ID:</div>
+    <input id="taskId" value="8" />
+  </div>
+
+  <div class="row">
+    <button id="btnConnect">Connect & Join Task</button>
+    <button id="btnLeave">Leave Task</button>
+  </div>
+
+  <hr/>
+
+  <div class="row">
+    <div>Send message via HUB:</div>
+    <input id="msg" placeholder="Message text" />
+    <button id="btnSend">Send</button>
+  </div>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.5/signalr.min.js"></script>
+  <script>
+    const baseUrl = "http://localhost:5077";
+    const logEl = document.getElementById("log");
+
+    function log(...args) {
+      const s = args.map(a => (typeof a === "string" ? a : JSON.stringify(a, null, 2))).join(" ");
+      console.log(...args);
+      logEl.textContent += s + "\n";
+    }
+
+    function getValue(id) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error("Не найден элемент #" + id);
+      return el.value?.trim();
+    }
+
+    let conn = null;
+
+    document.getElementById("btnConnect").onclick = async () => {
+      try {
+        const token = getValue("jwt");
+        const taskId = Number(getValue("taskId"));
+        if (!token) { alert("Вставь JWT"); return; }
+        if (!taskId) { alert("TaskId должен быть числом"); return; }
+
+        conn = new signalR.HubConnectionBuilder()
+          .withUrl(baseUrl + "/hubs/tasks", {
+            accessTokenFactory: () => token
+          })
+          .withAutomaticReconnect()
+          .build();
+
+        conn.on("MessageReceived", (m) => log("MessageReceived:", m));
+        conn.on("UserTyping", (x) => log("UserTyping:", x));
+
+        await conn.start();
+        log("✅ Connected");
+
+        await conn.invoke("JoinTask", taskId);
+        log("✅ Joined task:", taskId);
+      } catch (e) {
+        log("❌ Error:", (e && e.message) ? e.message : e);
+      }
+    };
+
+    document.getElementById("btnLeave").onclick = async () => {
+      try {
+        if (!conn) { alert("Сначала Connect"); return; }
+        const taskId = Number(getValue("taskId"));
+        await conn.invoke("LeaveTask", taskId);
+        log("✅ Left task:", taskId);
+      } catch (e) {
+        log("❌ Leave error:", (e && e.message) ? e.message : e);
+      }
+    };
+
+    document.getElementById("btnSend").onclick = async () => {
+      try {
+        if (!conn) { alert("Сначала Connect"); return; }
+        const taskId = Number(getValue("taskId"));
+        const text = getValue("msg");
+        if (!text) { alert("Напиши текст"); return; }
+
+        // ВНИМАНИЕ: имя метода должно совпадать с твоим Hub методом отправки.
+        // Если у тебя нет такого, этот блок не нужен. Тест "mute" делается через REST POST /messages.
+        await conn.invoke("SendMessage", taskId, text);
+        log("✅ Sent via hub:", text);
+      } catch (e) {
+        log("❌ Send error:", (e && e.message) ? e.message : e);
+      }
+    };
+  </script>
+</body>
+</html>
