@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
+using Tasko.Domain.Entities.Categories;
 using Tasko.Domain.Entities.Chats;
 using Tasko.Domain.Entities.Notifications;
 using Tasko.Domain.Entities.Tasks;
@@ -22,7 +23,8 @@ public interface ITaskoDbContext
 
     DbSet<Notification> Notifications { get; }
 
-
+    DbSet<Category> Categories { get; }
+    DbSet<ExecutorCategory> ExecutorCategories { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

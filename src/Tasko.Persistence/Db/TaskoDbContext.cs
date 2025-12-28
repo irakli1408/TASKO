@@ -2,6 +2,7 @@
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
+using Tasko.Domain.Entities.Categories;
 using Tasko.Domain.Entities.Chats;
 using Tasko.Domain.Entities.Notifications;
 using Tasko.Domain.Entities.Tasks;
@@ -23,6 +24,9 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
     public DbSet<TaskView> TaskViews => Set<TaskView>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<ExecutorCategory> ExecutorCategories => Set<ExecutorCategory>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
