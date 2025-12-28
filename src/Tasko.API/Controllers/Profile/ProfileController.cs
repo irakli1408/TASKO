@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Tasko.API.Settings;
+using Tasko.Application.DTO.Executors;
 using Tasko.Application.DTO.Profile;
+using Tasko.Application.Handlers.Executors.Queries.GetExecutorPublicProfile;
 using Tasko.Application.Handlers.Profile.Commands.DisableExecutor;
 using Tasko.Application.Handlers.Profile.Commands.EnableExecutor;
 using Tasko.Application.Handlers.Profile.Commands.UpdateExecutorProfile;
@@ -36,4 +38,8 @@ public sealed class ProfileController : ApiControllerBase
     [HttpPut("me/executor")]
     public Task<MyProfileDto> UpdateExecutor([FromBody] UpdateExecutorProfileCommand command, CancellationToken ct)
         => Sender.Send(command, ct);
+
+    [HttpGet("{id:long}")]
+    public Task<ExecutorPublicProfileDto> ExecutorProfileByIdForCustomer([FromRoute] long id, CancellationToken ct)
+        => Sender.Send(new GetExecutorPublicProfileQuery(id), ct);
 }
