@@ -19,7 +19,22 @@ namespace Tasko.Persistence.Configurations.Categories
             b.Property(x => x.IsActive)
                 .IsRequired();
 
-            b.HasIndex(x => x.Name).IsUnique(false);
+            b.Property(x => x.CreatedAtUtc)
+                .IsRequired();
+
+            // hierarchy
+            b.Property(x => x.ParentId)
+                .IsRequired(false);
+
+            b.HasOne(x => x.Parent)
+                .WithMany(x => x.Children)
+                .HasForeignKey(x => x.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => x.ParentId);
+            b.HasIndex(x => x.Name);
+            // optional uniqueness inside parent:
+            // b.HasIndex(x => new { x.ParentId, x.Name }).IsUnique();
         }
     }
 }

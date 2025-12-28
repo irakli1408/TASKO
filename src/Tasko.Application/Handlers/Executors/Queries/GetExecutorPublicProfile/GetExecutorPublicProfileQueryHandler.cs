@@ -29,6 +29,12 @@ public sealed class GetExecutorPublicProfileQueryHandler
         if (user.RoleType is not (UserRoleType.Executor or UserRoleType.Both))
             throw new InvalidOperationException("Executor not found.");
 
+        var categoryIds = await _db.ExecutorCategories
+            .AsNoTracking()
+            .Where(x => x.UserId == user.Id)
+            .Select(x => x.CategoryId)
+            .OrderBy(x => x)
+            .ToListAsync(ct);
         // If you want ONLY active executors visible - enable this:
         // if (!user.IsExecutorActive) throw new InvalidOperationException("Executor not found.");
 
@@ -46,7 +52,7 @@ public sealed class GetExecutorPublicProfileQueryHandler
             LocationType = user.LocationType,
             ExperienceYears = user.ExperienceYears,
 
-            CategoryIds = Array.Empty<long>() // TODO: categories
+            CategoryIds = categoryIds
         };
-    }
+    }    
 }
