@@ -57,7 +57,7 @@ public sealed class GetTaskStatsQueryHandler : IRequestHandler<GetTaskStatsQuery
             OffersCount = offersCount,
             ActiveOffersCount = activeOffersCount,
             AcceptedOffersCount = acceptedOffersCount,
-            ViewsCount = 0
+            ViewsCount = task.ViewsCount
         };
     }
 }
