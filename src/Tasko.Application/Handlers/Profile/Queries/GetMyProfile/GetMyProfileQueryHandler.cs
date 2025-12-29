@@ -23,9 +23,19 @@ public sealed class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery
         // Replace GetUserIdLong() if your CurrentState uses another name.
         var userId = _current.GetUserIdLong();
 
-        var user = await _db.Users
-            .AsNoTracking()
-            .FirstAsync(x => x.Id == userId, ct);
+        var data = await (
+     from u in _db.Users.AsNoTracking()
+     where u.Id == userId
+     join el in _db.ExecutorLocations.AsNoTracking()
+         on u.Id equals el.UserId into els
+     select new
+     {
+         User = u,
+         ExecutorLocationTypes = els.Select(x => (int)x.LocationType).ToList()
+     }
+ ).FirstAsync(ct);
+
+        var user = data.User;
 
         var canBeExecutor = user.RoleType is UserRoleType.Executor or UserRoleType.Both;
 
@@ -33,7 +43,6 @@ public sealed class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery
         {
             Id = user.Id,
             Email = user.Email,
-
             FirstName = user.FirstName,
             LastName = user.LastName,
             Phone = user.Phone,
@@ -42,7 +51,9 @@ public sealed class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery
 
             RoleType = user.RoleType,
             IsExecutorActive = user.IsExecutorActive,
-            LocationType = user.LocationType,
+
+            LocationType = user.LocationType, 
+            ExecutorLocationTypes = data.ExecutorLocationTypes,
 
             RatingAverage = user.RatingAverage,
             RatingCount = user.RatingCount,

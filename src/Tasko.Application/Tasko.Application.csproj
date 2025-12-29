@@ -21,7 +21,6 @@
     <Folder Include="Handlers\Auth\Commands\Refresh\" />
     <Folder Include="Handlers\Auth\Commands\Register\" />
     <Folder Include="Handlers\Auth\Queries\Me\" />
-    <Folder Include="Localization\" />
   </ItemGroup>
 
   <PropertyGroup>

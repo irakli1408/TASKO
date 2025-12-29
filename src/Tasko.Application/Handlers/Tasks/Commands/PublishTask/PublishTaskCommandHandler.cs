@@ -50,16 +50,22 @@ public sealed class PublishTaskCommandHandler : IRequestHandler<PublishTaskComma
         task.Publish();
 
         // ✅ найти подходящих мастеров по категории задачи
+        var taskLoc = task.LocationType;
+
         var executorIds = await (
             from ec in _db.ExecutorCategories.AsNoTracking()
             join u in _db.Users.AsNoTracking() on ec.UserId equals u.Id
+            join el in _db.ExecutorLocations.AsNoTracking() on u.Id equals el.UserId
             where ec.CategoryId == task.CategoryId
                   && u.IsActive
                   && u.IsExecutorActive
                   && (u.RoleType == UserRoleType.Executor || u.RoleType == UserRoleType.Both)
                   && u.Id != task.CreatedByUserId
+                  // ✅ вариант A: мастер с AllCity получает любые районы
+                  && (el.LocationType == LocationType.AllCity || el.LocationType == taskLoc)
             select u.Id
         ).Distinct().ToListAsync(ct);
+
 
         // ✅ сохранить уведомления в БД (чтобы не терялись оффлайн)
         if (executorIds.Count > 0)

@@ -16,7 +16,7 @@ public sealed class MyProfileDto
     public UserRoleType RoleType { get; set; }
     public bool IsExecutorActive { get; set; }
     public LocationType LocationType { get; set; }
-
+    public List<int> ExecutorLocationTypes { get; set; } = new();
     public double RatingAverage { get; set; }
     public int RatingCount { get; set; }
 
