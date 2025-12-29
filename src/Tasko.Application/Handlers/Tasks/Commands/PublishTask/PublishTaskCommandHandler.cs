@@ -1,10 +1,12 @@
-﻿using MediatR;
+﻿using System.Text.Json;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Realtime;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
 using Tasko.Domain.Entities.Accounts.Users;
+using Tasko.Domain.Entities.Notifications;
 
 namespace Tasko.Application.Handlers.Tasks.Commands.PublishTask;
 
@@ -46,7 +48,6 @@ public sealed class PublishTaskCommandHandler : IRequestHandler<PublishTaskComma
             throw new InvalidOperationException("Task must have a subcategory (leaf).");
 
         task.Publish();
-        await _db.SaveChangesAsync(ct);
 
         // ✅ найти подходящих мастеров по категории задачи
         var executorIds = await (
@@ -60,17 +61,47 @@ public sealed class PublishTaskCommandHandler : IRequestHandler<PublishTaskComma
             select u.Id
         ).Distinct().ToListAsync(ct);
 
-        // ✅ отправить уведомление только им
-        await _realtime.TaskPublishedToExecutors(
-            executorIds,
-            new TaskPublishedNotificationDto
+        // ✅ сохранить уведомления в БД (чтобы не терялись оффлайн)
+        if (executorIds.Count > 0)
+        {
+            var dataJson = JsonSerializer.Serialize(new
             {
-                TaskId = task.Id,
-                CategoryId = task.CategoryId,
-                Title = task.Title,
-                Budget = task.Budget,
-                CreatedAtUtc = task.CreatedAtUtc
-            },
-            ct);
+                taskId = task.Id,
+                categoryId = task.CategoryId
+            });
+
+            var title = "New task";
+            var body = task.Title + (task.Budget is null ? "" : $" (Budget: {task.Budget})");
+
+            var notifications = executorIds
+                .Select(executorId => new Notification(
+                    userId: executorId,
+                    type: NotificationType.TaskPublished,
+                    title: title,
+                    body: body,
+                    dataJson: dataJson))
+                .ToList();
+
+            _db.Notifications.AddRange(notifications);
+        }
+
+        // ✅ одним сохранением: и Publish, и Notifications
+        await _db.SaveChangesAsync(ct);
+
+        // ✅ SignalR только после сохранения в БД
+        if (executorIds.Count > 0)
+        {
+            await _realtime.TaskPublishedToExecutors(
+                executorIds,
+                new TaskPublishedNotificationDto
+                {
+                    TaskId = task.Id,
+                    CategoryId = task.CategoryId,
+                    Title = task.Title,
+                    Budget = task.Budget,
+                    CreatedAtUtc = task.CreatedAtUtc
+                },
+                ct);
+        }
     }
 }
