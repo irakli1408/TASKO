@@ -50,6 +50,32 @@ public sealed class TaskPost
         Status = TaskStatus.Published;
     }
 
+    public void UpdateDraft(string? title = null, string? description = null, decimal? budget = null)
+    {
+        if (Status != TaskStatus.Draft)
+            throw new InvalidOperationException("Task cannot be edited after publish.");
+
+        if (title is not null)
+        {
+            var t = title.Trim();
+            if (string.IsNullOrWhiteSpace(t))
+                throw new ArgumentException("Title is required.", nameof(title));
+
+            Title = t;
+        }
+
+        if (description is not null)
+            Description = description.Trim();
+
+        if (budget is not null)
+        {
+            if (budget.Value < 0)
+                throw new ArgumentOutOfRangeException(nameof(budget));
+
+            Budget = budget;
+        }
+    }
+
     public void Assign(long executorUserId)
     {
         if (Status != TaskStatus.Published)

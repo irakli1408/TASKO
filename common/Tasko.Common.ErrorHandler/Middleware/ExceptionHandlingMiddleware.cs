@@ -32,6 +32,9 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         var (status, message, details) = ex switch
         {
             AppValidationException ave => (HttpStatusCode.BadRequest, ave.Message, new { errors = ave.Errors }),
+            KeyNotFoundException knf => (HttpStatusCode.NotFound, knf.Message, null),
+            UnauthorizedAccessException uae => (HttpStatusCode.Unauthorized, uae.Message, null),
+            InvalidOperationException ioe => (HttpStatusCode.BadRequest, ioe.Message, null),
             NotFoundException nfe      => (HttpStatusCode.NotFound,  nfe.Message, null),
             UnauthorizedException ue   => (HttpStatusCode.Unauthorized, ue.Message, null),
             ArgumentException ae       => (HttpStatusCode.BadRequest, ae.Message, null),
