@@ -14,8 +14,10 @@ using Tasko.Application.Handlers.Tasks.Commands.CreateOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateTask;
 using Tasko.Application.Handlers.Tasks.Commands.PublishTask;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
+using Tasko.Application.Handlers.Tasks.Queries.GetTaskFeed;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskStats;
+using Tasko.Domain.Entities.Accounts.Users;
 
 namespace Tasko.API.Controllers.Tasks;
 
@@ -117,6 +119,14 @@ public sealed class TasksController : ApiControllerBase
         var dto = await Sender.Send(new GetTaskByIdQuery(taskId), ct);
         return Ok(dto);
     }
+
+    [HttpGet("feed")]
+    public Task<IReadOnlyList<TaskFeedItemDto>> GetFeed(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50,
+        [FromQuery] LocationType? locationType = null,
+        CancellationToken ct = default)
+        => Sender.Send(new GetTaskFeedQuery(skip, take, locationType), ct);
 }
 
 
