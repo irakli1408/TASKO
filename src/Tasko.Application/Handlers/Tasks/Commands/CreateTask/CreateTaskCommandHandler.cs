@@ -41,7 +41,8 @@ public sealed class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand
             budget: request.Budget
         );
 
-        entity.SetCategory(request.CategoryId);
+        entity.SetCategory(request.CategoryId); 
+        entity.SetLocation(request.LocationType);
 
         _db.Tasks.Add(entity);
         await _db.SaveChangesAsync(ct);

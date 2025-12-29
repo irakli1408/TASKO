@@ -9,10 +9,18 @@
     public enum LocationType
     {
         AllCity = 1,
-        Center = 2,
-        DistrictA = 3,
-        DistrictB = 4
+        Mtatsminda = 2,
+        Vake = 3,
+        Saburtalo = 4,
+        Krtsanisi = 5,
+        Isani = 6,
+        Samgori = 7,
+        Chugureti = 8,
+        Didube = 9,
+        Nadzaladevi = 10,
+        Gldani = 11
     }
+
     public sealed class User
     {
         private User() { }

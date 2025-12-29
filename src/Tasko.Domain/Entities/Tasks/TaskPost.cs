@@ -1,4 +1,5 @@
-﻿using Tasko.Domain.Entities.Categories;
+﻿using Tasko.Domain.Entities.Accounts.Users;
+using Tasko.Domain.Entities.Categories;
 
 namespace Tasko.Domain.Entities.Tasks;
 
@@ -30,6 +31,9 @@ public sealed class TaskPost
     public DateTime CreatedAtUtc { get; private set; }
     public long CategoryId { get; private set; }
     public Category Category { get; private set; } = null!;
+    public LocationType LocationType { get; private set; } = LocationType.AllCity;
+
+    public void SetLocation(LocationType location) => LocationType = location;
 
     public void SetCategory(long categoryId)
     {

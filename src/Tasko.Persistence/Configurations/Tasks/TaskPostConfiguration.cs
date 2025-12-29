@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Tasks;
 
 namespace Tasko.Persistence.Configurations.Tasks;
@@ -24,11 +25,15 @@ public sealed class TaskPostConfiguration : IEntityTypeConfiguration<TaskPost>
 
         e.Property(x => x.CategoryId)
           .IsRequired();
+        e.Property(x => x.LocationType)
+        .HasConversion<int>()
+        .HasDefaultValue(LocationType.AllCity)
+        .IsRequired();
 
         e.HasOne(x => x.Category)
-            .WithMany()
-            .HasForeignKey(x => x.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
+        .WithMany()
+        .HasForeignKey(x => x.CategoryId)
+        .OnDelete(DeleteBehavior.Restrict);
 
         e.HasIndex(x => x.CategoryId);
         e.HasIndex(x => x.CreatedByUserId);
