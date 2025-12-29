@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Tasko.API.Common.Model;
 using Tasko.API.Realtime.Models;
@@ -20,6 +21,11 @@ using Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskFeed;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskStats;
+using Tasko.Application.Handlers.Tasks.Commands.UploadTaskImages;
+using Tasko.Application.Handlers.Tasks.Commands.DeleteTaskImage;
+using Tasko.Application.Handlers.Tasks.Queries.GetTaskImages;
+using Tasko.Application.DTO.Media;
+using Tasko.Application.Media;
 using Tasko.Domain.Entities.Accounts.Users;
 
 namespace Tasko.API.Controllers.Tasks;
@@ -146,4 +152,43 @@ public sealed class TasksController : ApiControllerBase
         [FromQuery] LocationType? locationType = null,
         CancellationToken ct = default)
         => Sender.Send(new GetTaskFeedQuery(skip, take, locationType), ct);
+
+    public sealed class UploadImagesForm
+    {
+        public List<IFormFile> Files { get; init; } = new();
+    }
+
+    [HttpPost("{taskId:long}/images")]
+    [Authorize]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<IReadOnlyList<MediaFileDto>>> UploadImages(
+        [FromRoute] long taskId,
+        [FromForm] UploadImagesForm form,
+        CancellationToken ct)
+    {
+        if (form.Files.Count == 0)
+            return BadRequest("No files provided.");
+
+        var files = form.Files.Select(f => new UploadFile(
+            Content: f.OpenReadStream(),
+            FileName: f.FileName,
+            ContentType: f.ContentType,
+            Length: f.Length
+        )).ToList();
+
+        return Ok(await Sender.Send(new UploadTaskImagesCommand(taskId, files), ct));
+    }
+
+    [HttpGet("{taskId:long}/images")]
+    public async Task<ActionResult<IReadOnlyList<MediaFileDto>>> GetImages([FromRoute] long taskId, CancellationToken ct)
+        => Ok(await Sender.Send(new GetTaskImagesQuery(taskId), ct));
+
+    [HttpDelete("{taskId:long}/images/{fileId:long}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteImage([FromRoute] long taskId, [FromRoute] long fileId, CancellationToken ct)
+    {
+        await Sender.Send(new DeleteTaskImageCommand(taskId, fileId), ct);
+        return NoContent();
+    }
+
 }

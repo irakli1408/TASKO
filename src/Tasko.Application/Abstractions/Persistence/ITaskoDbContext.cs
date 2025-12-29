@@ -5,6 +5,7 @@ using Tasko.Domain.Entities.Categories;
 using Tasko.Domain.Entities.Chats;
 using Tasko.Domain.Entities.Notifications;
 using Tasko.Domain.Entities.Tasks;
+using Tasko.Domain.Entities.Media;
 
 namespace Tasko.Application.Abstractions.Persistence;
 
@@ -28,5 +29,9 @@ public interface ITaskoDbContext
     DbSet<ExecutorLocation> ExecutorLocations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    DbSet<MediaFile> Files { get; }
+    DbSet<FileMap> FileMaps { get; }
+
 }
+
 

@@ -6,6 +6,7 @@ using Tasko.Domain.Entities.Categories;
 using Tasko.Domain.Entities.Chats;
 using Tasko.Domain.Entities.Notifications;
 using Tasko.Domain.Entities.Tasks;
+using Tasko.Domain.Entities.Media;
 
 public sealed class TaskoDbContext : DbContext, ITaskoDbContext
 {
@@ -36,5 +37,9 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TaskoDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }
+    public DbSet<MediaFile> Files => Set<MediaFile>();
+    public DbSet<FileMap> FileMaps => Set<FileMap>();
+
 }
+
 
