@@ -1,8 +1,10 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Services;
 using Tasko.Application.DTO.Media;
+using Tasko.Application.Media;
 using Tasko.Common.CurrentState;
 using Tasko.Domain.Entities.Media;
 
@@ -10,17 +12,21 @@ namespace Tasko.Application.Handlers.Tasks.Commands.UploadTaskImages;
 
 public sealed class UploadTaskImagesCommandHandler : IRequestHandler<UploadTaskImagesCommand, IReadOnlyList<MediaFileDto>>
 {
-    private const int MaxTaskImages = 5;
-
     private readonly ITaskoDbContext _db;
     private readonly ICurrentStateService _current;
     private readonly IMediaService _media;
+    private readonly MediaOptions _opt;
 
-    public UploadTaskImagesCommandHandler(ITaskoDbContext db, ICurrentStateService current, IMediaService media)
+    public UploadTaskImagesCommandHandler(
+        ITaskoDbContext db,
+        ICurrentStateService current,
+        IMediaService media,
+        IOptions<MediaOptions> opt)
     {
         _db = db;
         _current = current;
         _media = media;
+        _opt = opt.Value;
     }
 
     public async Task<IReadOnlyList<MediaFileDto>> Handle(UploadTaskImagesCommand request, CancellationToken ct)
@@ -44,11 +50,12 @@ public sealed class UploadTaskImagesCommandHandler : IRequestHandler<UploadTaskI
             .AsNoTracking()
             .CountAsync(x => x.OwnerType == MediaOwnerType.TaskPost && x.OwnerId == request.TaskId, ct);
 
-        if (existingCount >= MaxTaskImages)
-            throw new InvalidOperationException($"Maximum {MaxTaskImages} images per task.");
+        var max = _opt.MaxTaskImages;
+        if (existingCount >= max)
+            throw new InvalidOperationException($"Maximum {max} images per task.");
 
-        if (existingCount + request.Files.Count > MaxTaskImages)
-            throw new InvalidOperationException($"You can upload only {MaxTaskImages - existingCount} more images.");
+        if (existingCount + request.Files.Count > max)
+            throw new InvalidOperationException($"You can upload only {max - existingCount} more images.");
 
         var result = new List<MediaFileDto>(request.Files.Count);
         var sort = existingCount;

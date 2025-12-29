@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Services;
 using Tasko.Application.Media;
@@ -8,21 +9,26 @@ namespace Tasko.Application.Services;
 
 public sealed class MediaService : IMediaService
 {
-    private static readonly HashSet<string> AllowedExt = new(StringComparer.OrdinalIgnoreCase)
-    { ".jpg", ".jpeg", ".png", ".webp" };
-
-    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
-    { "image/jpeg", "image/png", "image/webp" };
-
-    private const long MaxImageBytes = 10L * 1024 * 1024; // 10 MB (MVP)
-
     private readonly ITaskoDbContext _db;
     private readonly IFileStorage _storage;
 
-    public MediaService(ITaskoDbContext db, IFileStorage storage)
+    private readonly MediaOptions _opt;
+    private readonly HashSet<string> _allowedExt;
+    private readonly HashSet<string> _allowedTypes;
+
+    public MediaService(ITaskoDbContext db, IFileStorage storage, IOptions<MediaOptions> opt)
     {
         _db = db;
         _storage = storage;
+
+        _opt = opt.Value;
+
+        _allowedExt = new HashSet<string>(
+            _opt.AllowedImageExtensions.Select(x => x.ToLowerInvariant()));
+
+        _allowedTypes = new HashSet<string>(
+            _opt.AllowedImageContentTypes,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     public string ToPublicUrl(string storagePath)
@@ -30,15 +36,20 @@ public sealed class MediaService : IMediaService
 
     public async Task<MediaFile> SaveImageAsync(long createdByUserId, string relativeFolder, UploadFile file, CancellationToken ct)
     {
-        if (file.Length <= 0) throw new ArgumentException("Empty file.");
-        if (file.Length > MaxImageBytes) throw new InvalidOperationException("File is too large.");
-        if (!AllowedContentTypes.Contains(file.ContentType)) throw new InvalidOperationException("Unsupported image content type.");
+        if (file.Length <= 0)
+            throw new ArgumentException("Empty file.");
 
-        var ext = Path.GetExtension(file.FileName) ?? "";
-        if (!AllowedExt.Contains(ext)) throw new InvalidOperationException("Unsupported image extension.");
+        if (file.Length > _opt.MaxImageBytes)
+            throw new InvalidOperationException("File is too large.");
 
-        var safeExt = ext.ToLowerInvariant();
-        var newName = $"{Guid.NewGuid():N}{safeExt}";
+        if (!_allowedTypes.Contains(file.ContentType))
+            throw new InvalidOperationException("Unsupported image content type.");
+
+        var ext = (Path.GetExtension(file.FileName) ?? "").ToLowerInvariant();
+        if (!_allowedExt.Contains(ext))
+            throw new InvalidOperationException("Unsupported image extension.");
+
+        var newName = $"{Guid.NewGuid():N}{ext}";
 
         // 1) save physical file
         var storagePath = await _storage.SaveAsync(relativeFolder, newName, file.Content, ct);

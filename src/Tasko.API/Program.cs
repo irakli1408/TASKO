@@ -17,6 +17,7 @@ using Tasko.Common.ErrorHandler.Middleware;
 using Tasko.Common.Tools.Extensions;
 using Tasko.Persistence.Auth;
 using Tasko.API.Services.Media;
+using Tasko.Application.Media;
 var builder = WebApplication.CreateBuilder(args);
 
 // -----------------------------
@@ -45,6 +46,9 @@ builder.Services.AddScoped<INotificationRealtime, SignalRNotificationRealtime>()
 // -----------------------------
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IMediaService, MediaService>();
+
+// Media options (formats/limits)
+builder.Services.Configure<MediaOptions>(builder.Configuration.GetSection("Media"));
 // -----------------------------
 // HttpContextAccessor (нужен для CurrentStateService)
 // -----------------------------
@@ -239,4 +243,6 @@ app.MapHub<TaskHub>("/hubs/tasks");
 app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();
+
+
 
