@@ -29,6 +29,8 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
     public DbSet<ExecutorCategory> ExecutorCategories => Set<ExecutorCategory>();
 
 
+    public DbSet<ExecutorLocation> ExecutorLocations => Set<ExecutorLocation>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TaskoDbContext).Assembly);

@@ -25,6 +25,7 @@ public interface ITaskoDbContext
 
     DbSet<Category> Categories { get; }
     DbSet<ExecutorCategory> ExecutorCategories { get; }
+    DbSet<ExecutorLocation> ExecutorLocations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
