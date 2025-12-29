@@ -22,7 +22,7 @@ namespace Tasko.Persistence.Configurations.Categories
                 .HasForeignKey(x => x.CategoryId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            b.HasIndex(x => x.CategoryId);
+            b.HasIndex(x => new { x.CategoryId, x.UserId });
         }
     }
 }

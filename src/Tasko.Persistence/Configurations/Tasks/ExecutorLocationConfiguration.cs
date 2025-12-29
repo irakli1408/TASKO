@@ -21,7 +21,7 @@ namespace Tasko.Persistence.Configurations.Tasks
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            b.HasIndex(x => x.LocationType);
+            b.HasIndex(x => new { x.LocationType, x.UserId });
         }
     }
 }
