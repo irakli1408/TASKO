@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Tasko.API.Common.Model;
 using Tasko.API.Realtime.Models;
 using Tasko.API.Settings;
 using Tasko.Application.DTO.Chats;
@@ -13,6 +14,8 @@ using Tasko.Application.Handlers.Tasks.Commands.AssignOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateTask;
 using Tasko.Application.Handlers.Tasks.Commands.PublishTask;
+
+using Tasko.Application.Handlers.Tasks.Commands.UpdateTask;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskFeed;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
@@ -61,6 +64,22 @@ public sealed class TasksController : ApiControllerBase
     [Authorize]
     public async Task<ActionResult<OfferDto>> CreateOffer(long taskId, [FromBody] CreateOfferBody body, CancellationToken ct)
         => Ok(await Sender.Send(new CreateOfferCommand(taskId, body.Price, body.Comment), ct));
+
+    [HttpPatch("{taskId:long}/update")]
+    [Authorize]
+    public async Task<IActionResult> Update([FromRoute] long taskId, [FromBody] UpdateTaskBody body, CancellationToken ct)
+    {
+        await Sender.Send(new UpdateTaskCommand(
+            TaskId: taskId,
+            Title: body.Title,
+            Description: body.Description,
+            Budget: body.Budget,
+            CategoryId: body.CategoryId,
+            LocationType: body.LocationType
+        ), ct);
+
+        return NoContent();
+    }
 
     [HttpPost("{taskId:long}/assign/{offerId:long}")]
     [Authorize]
@@ -128,7 +147,3 @@ public sealed class TasksController : ApiControllerBase
         CancellationToken ct = default)
         => Sender.Send(new GetTaskFeedQuery(skip, take, locationType), ct);
 }
-
-
-
-
