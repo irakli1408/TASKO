@@ -118,6 +118,14 @@
             RatingAverage = ((RatingAverage * RatingCount) + rate) / (++RatingCount);
         }
 
+        public void SetPasswordHash(string passwordHash)
+        {
+            if (string.IsNullOrWhiteSpace(passwordHash))
+                throw new ArgumentException("Password hash is empty.", nameof(passwordHash));
+
+            PasswordHash = passwordHash;
+        }
+
         public void Deactivate() => IsActive = false;
     }
 }

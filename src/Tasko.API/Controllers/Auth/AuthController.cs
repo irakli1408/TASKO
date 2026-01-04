@@ -10,6 +10,7 @@ using Tasko.Application.Handlers.Auth.Commands.Refresh;
 using Tasko.Application.Handlers.Auth.Commands.Register;
 using Tasko.Application.Handlers.Auth.Queries.Me;
 
+using Tasko.Application.Handlers.Auth.Commands.ChangePassword;
 namespace Tasko.API.Controllers.Auth
 {
     [EnableRateLimiting("auth")]
@@ -65,5 +66,17 @@ namespace Tasko.API.Controllers.Auth
             var result = await Sender.Send(new MeQuery(), cancellationToken);
             return Ok(result);
         }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        [EnableRateLimiting("write")]
+        public async Task<IActionResult> ChangePassword(
+            [FromBody] ChangePasswordCommand command,
+            CancellationToken cancellationToken)
+        {
+            await Sender.Send(command, cancellationToken);
+            return NoContent();
+        }
     }
+
 }

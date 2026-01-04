@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Asp.Versioning;
+using Asp.Versioning.Routing;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.AspNetCore.SignalR;
@@ -62,6 +64,27 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR(o =>
 {
     o.AddFilter<HubRateLimitFilter>();
+});
+
+builder.Services.AddApiVersioning(o =>
+{
+    o.DefaultApiVersion = new ApiVersion(1, 0);
+    o.AssumeDefaultVersionWhenUnspecified = true;
+    o.ReportApiVersions = true;
+
+    // URL segment: /api/v{version}/...
+    o.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(o =>
+{
+    o.GroupNameFormat = "'v'VVV";
+    o.SubstituteApiVersionInUrl = true;
+});
+
+// 💯 фикс твоей ошибки "apiVersion could not be resolved"
+builder.Services.Configure<RouteOptions>(o =>
+{
+    o.ConstraintMap["apiVersion"] = typeof(ApiVersionRouteConstraint);
 });
 
 // -----------------------------
