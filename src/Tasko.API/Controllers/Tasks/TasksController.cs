@@ -30,8 +30,6 @@ using Tasko.Domain.Entities.Accounts.Users;
 
 namespace Tasko.API.Controllers.Tasks;
 
-[ApiController]
-[Route("api/v1/{culture}/tasks")]
 [EnableRateLimiting("read")]
 public sealed class TasksController : ApiControllerBase
 {
@@ -76,9 +74,7 @@ public sealed class TasksController : ApiControllerBase
         [FromQuery] int skip = 0,
         [FromQuery] int take = 50,
         CancellationToken ct = default)
-    {
-        return Ok(await Sender.Send(new GetTaskMessagesQuery(taskId, skip, take), ct));
-    }
+        => Ok(await Sender.Send(new GetTaskMessagesQuery(taskId, skip, take), ct));
 
     [HttpPost("{taskId:long}/offers")]
     [Authorize]
@@ -133,10 +129,7 @@ public sealed class TasksController : ApiControllerBase
         [FromRoute] long taskId,
         [FromBody] SendMessageBody body,
         CancellationToken ct)
-    {
-        // messages не кешируем — инвалидация не нужна
-        return Ok(await Sender.Send(new SendTaskMessageCommand(taskId, body.Text), ct));
-    }
+        => Ok(await Sender.Send(new SendTaskMessageCommand(taskId, body.Text), ct));
 
     [HttpGet("{taskId:long}/messages/unread-count")]
     [Authorize]
@@ -152,7 +145,6 @@ public sealed class TasksController : ApiControllerBase
         [FromBody] MarkReadBody body,
         CancellationToken ct)
     {
-        // unread-count не кешируем — инвалидация не нужна
         await Sender.Send(new MarkMessagesReadCommand(taskId, body.LastReadMessageId), ct);
         return NoContent();
     }
@@ -170,20 +162,15 @@ public sealed class TasksController : ApiControllerBase
     [HttpGet("{taskId:long}/stats")]
     [Authorize]
     [EnableRateLimiting("read")]
-    public async Task<ActionResult<TaskStatsDto>> GetStats(
-        [FromRoute] long taskId,
-        CancellationToken ct)
+    public async Task<ActionResult<TaskStatsDto>> GetStats([FromRoute] long taskId, CancellationToken ct)
         => Ok(await Sender.Send(new GetTaskStatsQuery(taskId), ct));
 
     [HttpGet("{taskId:long}")]
-    [Authorize] // важно, т.к. vary-by-user и доступ зависит от пользователя
+    [Authorize]
     [EnableRateLimiting("read")]
     [OutputCache(PolicyName = "TaskById5s")]
     public async Task<IActionResult> GetById([FromRoute] long taskId, CancellationToken ct)
-    {
-        var dto = await Sender.Send(new GetTaskByIdQuery(taskId), ct);
-        return Ok(dto);
-    }
+        => Ok(await Sender.Send(new GetTaskByIdQuery(taskId), ct));
 
     [HttpGet("feed")]
     [Authorize]

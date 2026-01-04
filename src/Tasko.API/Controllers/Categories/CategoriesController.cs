@@ -12,13 +12,15 @@ using Tasko.Application.Handlers.Profile.Queries.GetMyExecutorCategories;
 
 namespace Tasko.API.Controllers.Categories;
 
-[ApiController]
-[Route("api/v1/[controller]")]
 [EnableRateLimiting("read")]
 public sealed class CategoriesController : ApiControllerBase
 {
     private readonly IOutputCacheStore _cache;
-    public CategoriesController(ISender sender, IOutputCacheStore cache) : base(sender) { _cache = cache; }
+
+    public CategoriesController(ISender sender, IOutputCacheStore cache) : base(sender)
+    {
+        _cache = cache;
+    }
 
     [HttpGet]
     [OutputCache(PolicyName = "PublicCategories5m")]
@@ -28,16 +30,16 @@ public sealed class CategoriesController : ApiControllerBase
     [HttpGet("tree")]
     [OutputCache(PolicyName = "PublicCategories5m")]
     public Task<IReadOnlyList<CategoryTreeDto>> GetTree(CancellationToken ct)
-    => Sender.Send(new GetCategoryTreeQuery(), ct);
+        => Sender.Send(new GetCategoryTreeQuery(), ct);
 
     [HttpGet("me/executor/categories")]
     [Authorize]
     public Task<IReadOnlyList<long>> GetMyExecutorCategories(CancellationToken ct)
-    => Sender.Send(new GetMyExecutorCategoriesQuery(), ct);
+        => Sender.Send(new GetMyExecutorCategoriesQuery(), ct);
 
     [HttpPut("me/executor/categories")]
-    [EnableRateLimiting("write")]
     [Authorize]
+    [EnableRateLimiting("write")]
     public async Task<IReadOnlyList<long>> UpdateMyExecutorCategories(
         [FromBody] UpdateMyExecutorCategoriesCommand command,
         CancellationToken ct)

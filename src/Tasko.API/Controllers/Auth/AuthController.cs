@@ -12,16 +12,11 @@ using Tasko.Application.Handlers.Auth.Queries.Me;
 
 namespace Tasko.API.Controllers.Auth
 {
-    [ApiController]
-    [Route("api/v1/[controller]")]
     [EnableRateLimiting("auth")]
     public sealed class AuthController : ApiControllerBase
     {
         public AuthController(ISender sender) : base(sender) { }
 
-        /// <summary>
-        /// Register new user (Customer by default)
-        /// </summary>
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Register(
@@ -32,9 +27,6 @@ namespace Tasko.API.Controllers.Auth
             return Ok(result);
         }
 
-        /// <summary>
-        /// Login by email + password
-        /// </summary>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Login(
@@ -45,9 +37,6 @@ namespace Tasko.API.Controllers.Auth
             return Ok(result);
         }
 
-        /// <summary>
-        /// Refresh access token by refresh token (rotation)
-        /// </summary>
         [HttpPost("refresh")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Refresh(
@@ -58,9 +47,6 @@ namespace Tasko.API.Controllers.Auth
             return Ok(result);
         }
 
-        /// <summary>
-        /// Logout (revoke refresh token or all sessions - depends on implementation)
-        /// </summary>
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout(
@@ -71,9 +57,6 @@ namespace Tasko.API.Controllers.Auth
             return NoContent();
         }
 
-        /// <summary>
-        /// Current user info (for testing JWT)
-        /// </summary>
         [HttpGet("me")]
         [Authorize]
         [DisableRateLimiting]
