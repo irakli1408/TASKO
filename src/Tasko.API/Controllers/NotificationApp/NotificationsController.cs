@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Tasko.Application.Handlers.Notifications.Commands.MarkNotificationRead;
 using Tasko.Application.Handlers.Notifications.Commands.ReadAllNotifications;
 using Tasko.Application.Handlers.Notifications.Queries.GetMyNotifications;
@@ -11,6 +12,7 @@ namespace Tasko.API.Controllers.NotificationApp;
 [ApiController]
 [Route("api/v1/{culture}/notifications")]
 [Authorize]
+[EnableRateLimiting("read")]
 public sealed class NotificationsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -25,6 +27,7 @@ public sealed class NotificationsController : ControllerBase
         => _mediator.Send(new GetMyNotificationsQuery(skip, take), ct);
 
     [HttpPost("{id:long}/read")]
+    [EnableRateLimiting("write")]
     public Task MarkRead([FromRoute] long id, CancellationToken ct)
         => _mediator.Send(new MarkNotificationReadCommand(id), ct);
 
@@ -33,6 +36,7 @@ public sealed class NotificationsController : ControllerBase
     => _mediator.Send(new GetUnreadCountQuery(), ct);
 
     [HttpPost("read-all")]
+    [EnableRateLimiting("write")]
     public Task ReadAll(CancellationToken ct)
     => _mediator.Send(new ReadAllNotificationsCommand(), ct);
 }

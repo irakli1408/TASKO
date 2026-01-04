@@ -33,8 +33,9 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResu
             throw new UnauthorizedAccessException();
 
         user.UpdateLastOnline();
+        var roles = AuthRoleMapper.FromUser(user);
 
-        var (access, accessExp) = _tokens.CreateAccessToken(user.Id, user.Email);
+        var (access, accessExp) = _tokens.CreateAccessToken(user.Id, user.Email, roles);
         var (refresh, refreshHash, refreshExp) = _tokens.CreateRefreshToken();
 
         _db.RefreshTokens.Add(new RefreshToken(user.Id, refreshHash, refreshExp));

@@ -5,7 +5,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Tasko.Application.Abstractions.Auth;
-using Tasko.Persistence.Auth;
+
+namespace Tasko.Persistence.Auth;
 
 public sealed class TokenService : ITokenService
 {
@@ -18,7 +19,7 @@ public sealed class TokenService : ITokenService
         _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opt.Key));
     }
 
-    public (string Token, DateTime ExpiresAtUtc) CreateAccessToken(long userId, string email)
+    public (string Token, DateTime ExpiresAtUtc) CreateAccessToken(long userId, string email, IEnumerable<string> roles)
     {
         var now = DateTime.UtcNow;
         var exp = now.AddMinutes(_opt.AccessTokenMinutes);
@@ -30,6 +31,17 @@ public sealed class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Email, email),
         };
+
+        if (roles is not null)
+        {
+            foreach (var role in roles
+                         .Where(r => !string.IsNullOrWhiteSpace(r))
+                         .Select(r => r.Trim())
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+        }
 
         var jwt = new JwtSecurityToken(
             issuer: _opt.Issuer,

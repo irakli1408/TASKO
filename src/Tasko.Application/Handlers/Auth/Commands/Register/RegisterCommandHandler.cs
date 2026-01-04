@@ -50,7 +50,9 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Au
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        var (access, accessExp) = _tokens.CreateAccessToken(user.Id, user.Email);
+        var roles = AuthRoleMapper.FromUser(user);
+
+        var (access, accessExp) = _tokens.CreateAccessToken(user.Id, user.Email, roles);
         var (refresh, refreshHash, refreshExp) = _tokens.CreateRefreshToken();
 
         _db.RefreshTokens.Add(new RefreshToken(user.Id, refreshHash, refreshExp));

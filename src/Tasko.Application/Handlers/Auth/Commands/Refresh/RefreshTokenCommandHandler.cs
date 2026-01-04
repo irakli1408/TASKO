@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Auth;
 using Tasko.Application.Abstractions.Persistence;
+using Tasko.Application.Common.Auth;
 using Tasko.Application.DTO.Auth;
 using Tasko.Domain.Entities.Auth;
 
@@ -34,8 +35,9 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
             throw new UnauthorizedAccessException();
 
         rt.Revoke();
+        var roles = AuthRoleMapper.FromUser(user);
 
-        var (access, accessExp) = _tokens.CreateAccessToken(user.Id, user.Email);
+        var (access, accessExp) = _tokens.CreateAccessToken(user.Id, user.Email, roles);
         var (refresh, refreshHash, refreshExp) = _tokens.CreateRefreshToken();
 
         _db.RefreshTokens.Add(new RefreshToken(user.Id, refreshHash, refreshExp));

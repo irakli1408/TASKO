@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Tasko.API.Settings;
 using Tasko.Application.DTO.Auth;
 using Tasko.Application.Handlers.Auth.Commands.Login;
@@ -13,6 +14,7 @@ namespace Tasko.API.Controllers.Auth
 {
     [ApiController]
     [Route("api/v1/[controller]")]
+    [EnableRateLimiting("auth")]
     public sealed class AuthController : ApiControllerBase
     {
         public AuthController(ISender sender) : base(sender) { }
@@ -74,6 +76,7 @@ namespace Tasko.API.Controllers.Auth
         /// </summary>
         [HttpGet("me")]
         [Authorize]
+        [DisableRateLimiting]
         public async Task<ActionResult<UserDto>> Me(CancellationToken cancellationToken)
         {
             var result = await Sender.Send(new MeQuery(), cancellationToken);
