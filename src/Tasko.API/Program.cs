@@ -17,14 +17,17 @@ using Tasko.API.Realtime;
 using Tasko.API.Realtime.Models;
 using Tasko.API.Services.Media;
 using Tasko.Application.Abstractions.Auth;
+using Tasko.Application.Abstractions.Email;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Realtime;
 using Tasko.Application.Abstractions.Services;
 using Tasko.Application.Media;
 using Tasko.Application.Services;
+using Tasko.Application.Settings;
 using Tasko.Common.ErrorHandler.Middleware;
 using Tasko.Common.Tools.Extensions;
 using Tasko.Persistence.Auth;
+using Tasko.Persistence.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +60,13 @@ builder.Services.Configure<MediaOptions>(builder.Configuration.GetSection("Media
 // HttpContextAccessor (нужен для CurrentStateService)
 // -----------------------------
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.Configure<PasswordResetOptions>(builder.Configuration.GetSection("PasswordReset"));
+
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
+
 
 // -----------------------------
 // SignalR + Hub filters
