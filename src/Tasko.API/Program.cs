@@ -61,12 +61,17 @@ builder.Services.Configure<MediaOptions>(builder.Configuration.GetSection("Media
 // -----------------------------
 builder.Services.AddHttpContextAccessor();
 
+// -----------------------------
+// Email + PasswordReset options
+// -----------------------------
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<PasswordResetOptions>(builder.Configuration.GetSection("PasswordReset"));
 
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
 
+// ✅ FIX: нужен для ResetPasswordCommandHandler (IPasswordHashService)
+builder.Services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
 
 // -----------------------------
 // SignalR + Hub filters

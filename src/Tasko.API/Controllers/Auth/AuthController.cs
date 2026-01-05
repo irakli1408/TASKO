@@ -2,15 +2,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Tasko.API.Common.Model;
 using Tasko.API.Settings;
 using Tasko.Application.DTO.Auth;
+using Tasko.Application.Handlers.Auth.Commands.ChangePassword;
+using Tasko.Application.Handlers.Auth.Commands.ForgotPassword;
 using Tasko.Application.Handlers.Auth.Commands.Login;
 using Tasko.Application.Handlers.Auth.Commands.Logout;
 using Tasko.Application.Handlers.Auth.Commands.Refresh;
 using Tasko.Application.Handlers.Auth.Commands.Register;
+using Tasko.Application.Handlers.Auth.Commands.ResetPassword;
 using Tasko.Application.Handlers.Auth.Queries.Me;
-
-using Tasko.Application.Handlers.Auth.Commands.ChangePassword;
 namespace Tasko.API.Controllers.Auth
 {
     [EnableRateLimiting("auth")]
@@ -77,6 +79,23 @@ namespace Tasko.API.Controllers.Auth
             await Sender.Send(command, cancellationToken);
             return NoContent();
         }
-    }
 
+        [HttpPost("forgot")]
+        [Authorize]
+        [EnableRateLimiting("write")]
+        public async Task<IActionResult> Forgot([FromBody] ForgotRequest req, CancellationToken ct)
+        {
+            await Sender.Send(new ForgotPasswordCommand(req.Email), ct);
+            return Ok(new { message = "If the email exists, a reset link has been sent." });
+        }
+
+        [HttpPost("reset")]
+        [Authorize]
+        [EnableRateLimiting("write")]
+        public async Task<IActionResult> Reset([FromBody] ResetRequest req, CancellationToken ct)
+        {
+            await Sender.Send(new ResetPasswordCommand(req.Token, req.NewPassword), ct);
+            return Ok(new { message = "Password has been reset." });
+        }
+    }
 }
