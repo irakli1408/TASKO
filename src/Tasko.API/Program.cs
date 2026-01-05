@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.MSSqlServer;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security.Claims;
 using System.Text;
@@ -30,6 +34,41 @@ using Tasko.Persistence.Auth;
 using Tasko.Persistence.Email;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//
+// ✅ LOGGING: ONLY DB + ONLY Warning/Error
+//
+builder.Logging.ClearProviders(); // чтобы не было Console/Debug
+
+builder.Host.UseSerilog((ctx, services, lc) =>
+{
+    var conn = ctx.Configuration.GetConnectionString("TaskoDBConnection");
+
+    var columnOptions = new ColumnOptions
+    {
+        AdditionalColumns = new Collection<SqlColumn>
+        {
+            new SqlColumn("TraceId", System.Data.SqlDbType.NVarChar, dataLength: 64),
+            new SqlColumn("UserId",  System.Data.SqlDbType.NVarChar, dataLength: 64),
+            new SqlColumn("Path",    System.Data.SqlDbType.NVarChar, dataLength: 256)
+        }
+    };
+
+    lc.MinimumLevel.Warning()
+      .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+      .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+      .Enrich.FromLogContext()
+      .WriteTo.MSSqlServer(
+          connectionString: conn,
+          sinkOptions: new MSSqlServerSinkOptions
+          {
+              TableName = "Logs",
+              AutoCreateSqlTable = true
+          },
+          restrictedToMinimumLevel: LogEventLevel.Warning,
+          columnOptions: columnOptions
+      );
+});
 
 // -----------------------------
 // Controllers (REST API)
@@ -70,7 +109,7 @@ builder.Services.Configure<PasswordResetOptions>(builder.Configuration.GetSectio
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
 
-// ✅ FIX: нужен для ResetPasswordCommandHandler (IPasswordHashService)
+// ✅ нужен для ResetPasswordCommandHandler (IPasswordHashService)
 builder.Services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
 
 // -----------------------------
@@ -196,33 +235,26 @@ builder.Services.AddRateLimiter(options =>
 // -----------------------------
 builder.Services.AddOutputCache(options =>
 {
-    // Публичные справочники (категории)
     options.AddPolicy("PublicCategories5m", p =>
         p.Expire(TimeSpan.FromMinutes(5))
          .Tag("categories"));
 
-    // Публичный профиль мастера
     options.AddPolicy("PublicProfile1m", p =>
         p.Expire(TimeSpan.FromMinutes(1))
          .Tag("profiles"));
 
-    // Feed мастера: зависит от query + user (через header)
     options.AddPolicy("Feed10s", p =>
         p.Expire(TimeSpan.FromSeconds(10))
          .SetVaryByQuery(new[] { "*" })
          .SetVaryByHeader("X-Cache-User")
          .Tag("feed"));
 
-    // Карточка таска: зависит от taskId + user (через header)
-    // ⚠️ если в контроллере route не taskId, а id — поменяй "taskId" -> "id"
     options.AddPolicy("TaskById5s", p =>
         p.Expire(TimeSpan.FromSeconds(5))
          .SetVaryByRouteValue(new[] { "taskId" })
          .SetVaryByHeader("X-Cache-User")
          .Tag("tasks"));
 
-    // Список изображений таска (быстро отдавать)
-    // ⚠️ аналогично: проверь имя route параметра
     options.AddPolicy("TaskImages30s", p =>
         p.Expire(TimeSpan.FromSeconds(30))
          .SetVaryByRouteValue(new[] { "taskId" })
@@ -241,6 +273,9 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    // ✅ фикс конфликтов имён типов (особенно nested record’ы в контроллерах)
+    c.CustomSchemaIds(t => t.FullName!.Replace("+", "."));
+
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tasko API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -392,10 +427,44 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
+//
+// ✅ Request logging to DB: only 4xx/5xx (Warning/Error)
+//
+app.UseSerilogRequestLogging(o =>
+{
+    o.GetLevel = (httpContext, elapsed, ex) =>
+    {
+        if (ex != null) return LogEventLevel.Error;
+
+        var status = httpContext.Response.StatusCode;
+        if (status >= 500) return LogEventLevel.Error;
+        if (status >= 400) return LogEventLevel.Warning;
+
+        return LogEventLevel.Verbose; // не попадёт (MinimumLevel.Warning)
+    };
+});
+
 app.UseStaticFiles();
 
 var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(locOptions.Value);
+
+//
+// ✅ Enrich logs: TraceId/UserId/Path (в колонки AdditionalColumns)
+//
+app.Use(async (ctx, next) =>
+{
+    var userId = ctx.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                 ?? ctx.User?.FindFirst("sub")?.Value
+                 ?? "anon";
+
+    using (Serilog.Context.LogContext.PushProperty("TraceId", ctx.TraceIdentifier))
+    using (Serilog.Context.LogContext.PushProperty("UserId", userId))
+    using (Serilog.Context.LogContext.PushProperty("Path", ctx.Request.Path.Value ?? ""))
+    {
+        await next();
+    }
+});
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
