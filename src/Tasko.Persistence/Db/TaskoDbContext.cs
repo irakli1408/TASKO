@@ -29,6 +29,8 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ExecutorCategory> ExecutorCategories => Set<ExecutorCategory>();
 
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
 
     public DbSet<ExecutorLocation> ExecutorLocations => Set<ExecutorLocation>();
 

@@ -28,10 +28,13 @@ public interface ITaskoDbContext
     DbSet<ExecutorCategory> ExecutorCategories { get; }
     DbSet<ExecutorLocation> ExecutorLocations { get; }
 
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     DbSet<MediaFile> Files { get; }
     DbSet<FileMap> FileMaps { get; }
 
+    DbSet<PasswordResetToken> PasswordResetTokens { get; }
+
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
 
