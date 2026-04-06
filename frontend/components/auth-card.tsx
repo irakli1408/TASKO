@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { resolveHomePath, useAuth } from "@/components/auth-provider";
+import { useI18n } from "@/components/i18n-provider";
 import { ApiError } from "@/lib/api";
 import { LogoLink } from "@/components/logo-link";
 
@@ -29,11 +30,11 @@ const initialState: FormState = {
   phone: ""
 };
 
-function getFriendlyError(error: unknown) {
+function getFriendlyError(error: unknown, t: (key: string) => string) {
   if (error instanceof ApiError) {
-    if (error.status === 401) return "Email or password is incorrect.";
-    if (error.status === 409) return "This email already exists.";
-    if (error.status === 400) return error.message || "Please check the form fields and try again.";
+    if (error.status === 401) return t("auth.incorrectCredentials");
+    if (error.status === 409) return t("auth.emailExists");
+    if (error.status === 400) return error.message || t("auth.checkFields");
 
     return error.message;
   }
@@ -41,19 +42,20 @@ function getFriendlyError(error: unknown) {
   if (error instanceof Error) {
     const message = error.message;
 
-    if (message.includes("401")) return "Email or password is incorrect.";
-    if (message.includes("400")) return "Please check the form fields and try again.";
-    if (message.includes("409")) return "This account already exists.";
+    if (message.includes("401")) return t("auth.incorrectCredentials");
+    if (message.includes("400")) return t("auth.checkFields");
+    if (message.includes("409")) return t("auth.accountExists");
 
     return message;
   }
 
-  return "Something went wrong. Please try again.";
+  return t("auth.genericError");
 }
 
 export function AuthCard({ mode }: AuthCardProps) {
   const router = useRouter();
   const { login, register, status, user } = useAuth();
+  const { t } = useI18n();
   const [form, setForm] = useState<FormState>(initialState);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -87,7 +89,7 @@ export function AuthCard({ mode }: AuthCardProps) {
 
       router.replace(resolveHomePath(currentUser));
     } catch (submitError) {
-      setError(getFriendlyError(submitError));
+      setError(getFriendlyError(submitError, t));
     } finally {
       setSubmitting(false);
     }
@@ -103,20 +105,24 @@ export function AuthCard({ mode }: AuthCardProps) {
           <div className="grid gap-8 bg-gradient-to-br from-[#f7faff] via-white to-[#fff8ed] p-8 sm:p-10">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#8ba0c3]">
-                Tasko access
+                {t("auth.access")}
               </p>
               <h1 className="mt-4 max-w-md text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                {isRegister ? "Create an account and start using Tasko." : "Welcome back to Tasko."}
+                {isRegister ? t("auth.registerTitle") : t("auth.loginTitle")}
               </h1>
               <p className="mt-5 max-w-lg text-base leading-7 tasko-muted">
                 {isRegister
-                  ? "Registration signs the user in immediately and takes them into the platform flow."
-                  : "Login loads the current user profile and routes them to the right workspace automatically."}
+                  ? t("auth.registerText")
+                  : t("auth.loginText")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              {["Safe login", "Profile sync", "Role redirect"].map((item) => (
+              {[
+                t("auth.safeLogin"),
+                t("auth.profileSync"),
+                t("auth.roleRedirect")
+              ].map((item) => (
                 <div key={item} className="tasko-soft-card px-4 py-5">
                   <p className="text-sm font-semibold text-[#35507f]">{item}</p>
                 </div>
@@ -129,14 +135,14 @@ export function AuthCard({ mode }: AuthCardProps) {
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#8ba0c3]">
-                {isRegister ? "Register" : "Login"}
+                {isRegister ? t("auth.register") : t("auth.login")}
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-                {isRegister ? "Let&apos;s create your account" : "Sign in to continue"}
+                {isRegister ? t("auth.createAccountTitle") : t("auth.signInTitle")}
               </h2>
             </div>
             <Link href="/" className="tasko-secondary-btn px-4 py-2">
-              Home
+              {t("auth.home")}
             </Link>
           </div>
 
@@ -144,26 +150,26 @@ export function AuthCard({ mode }: AuthCardProps) {
             {isRegister ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="tasko-label">First name</span>
+                  <span className="tasko-label">{t("auth.firstName")}</span>
                   <input
                     value={form.firstName}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, firstName: event.target.value }))
                     }
                     className="tasko-input"
-                    placeholder="Nika"
+                    placeholder={t("auth.firstNamePlaceholder")}
                     required
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="tasko-label">Last name</span>
+                  <span className="tasko-label">{t("auth.lastName")}</span>
                   <input
                     value={form.lastName}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, lastName: event.target.value }))
                     }
                     className="tasko-input"
-                    placeholder="Beridze"
+                    placeholder={t("auth.lastNamePlaceholder")}
                     required
                   />
                 </label>
@@ -171,7 +177,7 @@ export function AuthCard({ mode }: AuthCardProps) {
             ) : null}
 
             <label className="block space-y-2">
-              <span className="tasko-label">Email</span>
+              <span className="tasko-label">{t("auth.email")}</span>
               <input
                 type="email"
                 value={form.email}
@@ -179,28 +185,28 @@ export function AuthCard({ mode }: AuthCardProps) {
                   setForm((current) => ({ ...current, email: event.target.value }))
                 }
                 className="tasko-input"
-                placeholder="you@example.com"
+                placeholder={t("auth.emailPlaceholder")}
                 required
               />
             </label>
 
             {isRegister ? (
               <label className="block space-y-2">
-                <span className="tasko-label">Phone</span>
+                <span className="tasko-label">{t("auth.phone")}</span>
                 <input
                   value={form.phone}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, phone: event.target.value }))
                   }
                   className="tasko-input"
-                  placeholder="+995 555 12 34 56"
+                  placeholder={t("auth.phonePlaceholder")}
                   required
                 />
               </label>
             ) : null}
 
             <label className="block space-y-2">
-              <span className="tasko-label">Password</span>
+              <span className="tasko-label">{t("auth.password")}</span>
               <input
                 type="password"
                 value={form.password}
@@ -208,7 +214,7 @@ export function AuthCard({ mode }: AuthCardProps) {
                   setForm((current) => ({ ...current, password: event.target.value }))
                 }
                 className="tasko-input"
-                placeholder="Enter password"
+                placeholder={t("auth.passwordPlaceholder")}
                 required
               />
             </label>
@@ -224,17 +230,21 @@ export function AuthCard({ mode }: AuthCardProps) {
               disabled={submitting || status === "loading"}
               className="tasko-primary-btn w-full disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitting ? "Please wait..." : isRegister ? "Create account" : "Log in"}
+              {submitting
+                ? t("auth.wait")
+                : isRegister
+                  ? t("auth.createAccount")
+                  : t("auth.logIn")}
             </button>
           </form>
 
           <p className="mt-6 text-sm tasko-muted">
-            {isRegister ? "Already have an account?" : "Need an account?"}{" "}
+            {isRegister ? t("auth.alreadyHaveAccount") : t("auth.needAccount")}{" "}
             <Link
               href={isRegister ? "/login" : "/register"}
               className="font-semibold text-[#2f6bff]"
             >
-              {isRegister ? "Log in here" : "Register here"}
+              {isRegister ? t("auth.logInHere") : t("auth.registerHere")}
             </Link>
           </p>
         </section>

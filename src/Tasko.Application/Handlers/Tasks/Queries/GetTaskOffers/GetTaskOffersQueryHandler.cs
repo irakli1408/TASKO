@@ -77,16 +77,27 @@ public sealed class GetTaskOffersQueryHandler : IRequestHandler<GetTaskOffersQue
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip(skip)
             .Take(take)
-            .Select(x => new OfferDto
-            {
-                Id = x.Id,
-                TaskId = x.TaskId,
-                ExecutorUserId = x.ExecutorUserId,
-                Price = x.Price,
-                Comment = x.Comment,
-                Status = x.Status.ToString(),
-                CreatedAtUtc = x.CreatedAtUtc
-            })
+            .Join(
+                _db.Users.AsNoTracking(),
+                offer => offer.ExecutorUserId,
+                user => user.Id,
+                (offer, user) => new OfferDto
+                {
+                    Id = offer.Id,
+                    TaskId = offer.TaskId,
+                    ExecutorUserId = offer.ExecutorUserId,
+                    ExecutorFirstName = user.FirstName,
+                    ExecutorLastName = user.LastName,
+                    ExecutorAvatarUrl = user.AvatarUrl,
+                    ExecutorExperienceYears = user.ExperienceYears,
+                    ExecutorLocationType = user.LocationType,
+                    ExecutorRatingAverage = user.RatingAverage,
+                    ExecutorRatingCount = user.RatingCount,
+                    Price = offer.Price,
+                    Comment = offer.Comment,
+                    Status = offer.Status.ToString(),
+                    CreatedAtUtc = offer.CreatedAtUtc
+                })
             .ToListAsync(ct);
 
         return page;

@@ -28,6 +28,12 @@ export type Category = {
   name: string;
 };
 
+export type CategoryTree = {
+  id: number;
+  name: string;
+  children: CategoryTree[];
+};
+
 export type ExecutorLocationsResponse = {
   locationTypes: LocationType[];
 };
@@ -96,6 +102,12 @@ export async function updateExecutorProfile(
 
 export async function getCategories(token: string) {
   return apiFetch<Category[]>("/Categories", {
+    token
+  });
+}
+
+export async function getCategoryTree(token: string) {
+  return apiFetch<CategoryTree[]>("/Categories/tree", {
     token
   });
 }

@@ -77,6 +77,8 @@ export function createNotificationsHubConnection(getAccessToken: () => Promise<s
 export function getNotificationHref(notification: NotificationItem) {
   const data = parseNotificationData(notification.dataJson);
   const taskId = typeof data.taskId === "number" ? data.taskId : null;
+  const offerId = typeof data.offerId === "number" ? data.offerId : null;
+  const messageId = typeof data.messageId === "number" ? data.messageId : null;
 
   if (!taskId) {
     return "/notifications";
@@ -84,6 +86,22 @@ export function getNotificationHref(notification: NotificationItem) {
 
   if (notification.type === NotificationType.MessageSent) {
     return `/tasks/${taskId}/chat`;
+  }
+
+  if (notification.type === NotificationType.OfferCreated && offerId) {
+    return `/tasks/${taskId}`;
+  }
+
+  if (notification.type === NotificationType.TaskAssigned) {
+    return `/tasks/${taskId}/chat`;
+  }
+
+  if (notification.type === NotificationType.OfferAccepted) {
+    return `/tasks/${taskId}/chat`;
+  }
+
+  if (notification.type === NotificationType.TaskPublished && messageId) {
+    return `/tasks/${taskId}`;
   }
 
   return `/tasks/${taskId}`;
@@ -100,4 +118,49 @@ export function parseNotificationData(dataJson: string | null) {
   } catch {
     return {};
   }
+}
+
+export function getNotificationTypeLabel(type: NotificationType, t: (key: string) => string) {
+  if (type === NotificationType.OfferCreated) return t("notifications.typeOffer");
+  if (type === NotificationType.OfferAccepted) return t("notifications.typeOfferAccepted");
+  if (type === NotificationType.TaskAssigned) return t("notifications.typeAssignment");
+  if (type === NotificationType.MessageSent) return t("notifications.typeMessage");
+  if (type === NotificationType.TaskPublished) return t("notifications.typeMarketplace");
+  return t("notifications.typeNotification");
+}
+
+export function getNotificationTypeShortLabel(type: NotificationType) {
+  if (type === NotificationType.OfferCreated) return "OFF";
+  if (type === NotificationType.OfferAccepted) return "ACC";
+  if (type === NotificationType.TaskAssigned) return "JOB";
+  if (type === NotificationType.MessageSent) return "MSG";
+  if (type === NotificationType.TaskPublished) return "NEW";
+  return "ALT";
+}
+
+export function getNotificationContextText(notification: NotificationItem, t: (key: string) => string) {
+  const data = parseNotificationData(notification.dataJson);
+  const taskId = typeof data.taskId === "number" ? data.taskId : null;
+
+  if (notification.type === NotificationType.MessageSent && taskId) {
+    return `${t("notifications.contextMessage")}${taskId}`;
+  }
+
+  if (notification.type === NotificationType.TaskAssigned && taskId) {
+    return `${t("notifications.contextAssigned")}${taskId}`;
+  }
+
+  if (notification.type === NotificationType.OfferCreated && taskId) {
+    return `${t("notifications.contextOffers")}${taskId}`;
+  }
+
+  if (notification.type === NotificationType.OfferAccepted && taskId) {
+    return `${t("notifications.contextContinue")}${taskId}`;
+  }
+
+  if (notification.type === NotificationType.TaskPublished && taskId) {
+    return `${t("notifications.contextOpenTask")}${taskId}`;
+  }
+
+  return t("notifications.contextOpenRelated");
 }

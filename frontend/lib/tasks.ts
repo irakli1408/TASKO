@@ -3,6 +3,9 @@ import { LocationType } from "@/lib/auth";
 
 export type TaskFeedItem = {
   id: number;
+  createdByUserId: number;
+  createdByFirstName: string;
+  createdByLastName: string;
   title: string;
   description: string | null;
   budget: number | null;
@@ -15,6 +18,8 @@ export type TaskRecord = {
   id: number;
   createdByUserId: number;
   assignedToUserId: number | null;
+  assignedToFirstName: string | null;
+  assignedToLastName: string | null;
   title: string;
   description: string | null;
   budget: number | null;
@@ -28,6 +33,10 @@ export type TaskDetails = {
   id: number;
   createdByUserId: number;
   assignedToUserId: number | null;
+  createdByFirstName: string;
+  createdByLastName: string;
+  assignedToFirstName: string | null;
+  assignedToLastName: string | null;
   title: string;
   description: string;
   budget: number | null;
@@ -48,6 +57,13 @@ export type TaskOffer = {
   id: number;
   taskId: number;
   executorUserId: number;
+  executorFirstName: string;
+  executorLastName: string;
+  executorAvatarUrl: string | null;
+  executorExperienceYears: number | null;
+  executorLocationType: LocationType;
+  executorRatingAverage: number;
+  executorRatingCount: number;
   price: number;
   comment: string | null;
   status: string;
@@ -221,6 +237,27 @@ export async function createOffer(
 
 export async function assignOffer(token: string, taskId: number, offerId: number) {
   return apiFetch<void>(`/Tasks/${taskId}/assign/${offerId}`, {
+    method: "POST",
+    token
+  });
+}
+
+export async function startTaskProgress(token: string, taskId: number) {
+  return apiFetch<void>(`/Tasks/${taskId}/start`, {
+    method: "POST",
+    token
+  });
+}
+
+export async function completeTask(token: string, taskId: number) {
+  return apiFetch<void>(`/Tasks/${taskId}/complete`, {
+    method: "POST",
+    token
+  });
+}
+
+export async function cancelTask(token: string, taskId: number) {
+  return apiFetch<void>(`/Tasks/${taskId}/cancel`, {
     method: "POST",
     token
   });

@@ -84,4 +84,31 @@ public sealed class TaskPost
         AssignedToUserId = executorUserId;
         Status = TaskStatus.Assigned;
     }
+
+    public void StartProgress()
+    {
+        if (Status != TaskStatus.Assigned)
+            throw new InvalidOperationException("Task is not Assigned.");
+
+        if (AssignedToUserId is null)
+            throw new InvalidOperationException("Task has no assigned executor.");
+
+        Status = TaskStatus.InProgress;
+    }
+
+    public void Complete()
+    {
+        if (Status != TaskStatus.InProgress)
+            throw new InvalidOperationException("Task is not InProgress.");
+
+        Status = TaskStatus.Completed;
+    }
+
+    public void Cancel()
+    {
+        if (Status is not TaskStatus.Published and not TaskStatus.Assigned and not TaskStatus.InProgress)
+            throw new InvalidOperationException("Task cannot be cancelled in the current status.");
+
+        Status = TaskStatus.Cancelled;
+    }
 }

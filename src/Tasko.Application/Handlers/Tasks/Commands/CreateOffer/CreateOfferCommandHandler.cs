@@ -47,6 +47,21 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
         _db.Offers.Add(offer);
         await _db.SaveChangesAsync(ct);
 
+        var executor = await _db.Users
+            .AsNoTracking()
+            .Where(x => x.Id == userId)
+            .Select(x => new
+            {
+                x.FirstName,
+                x.LastName,
+                x.AvatarUrl,
+                x.ExperienceYears,
+                x.LocationType,
+                x.RatingAverage,
+                x.RatingCount
+            })
+            .FirstAsync(ct);
+
         // ✅ уведомление заказчику о новом оффере
         await _notificationService.NotifyOfferCreatedAsync(
             taskId: request.TaskId,
@@ -59,6 +74,13 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
             Id = offer.Id,
             TaskId = offer.TaskId,
             ExecutorUserId = offer.ExecutorUserId,
+            ExecutorFirstName = executor.FirstName,
+            ExecutorLastName = executor.LastName,
+            ExecutorAvatarUrl = executor.AvatarUrl,
+            ExecutorExperienceYears = executor.ExperienceYears,
+            ExecutorLocationType = executor.LocationType,
+            ExecutorRatingAverage = executor.RatingAverage,
+            ExecutorRatingCount = executor.RatingCount,
             Price = offer.Price,
             Comment = offer.Comment,
             Status = offer.Status.ToString(),

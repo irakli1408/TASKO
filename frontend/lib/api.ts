@@ -1,8 +1,10 @@
+import { defaultLocale, getStoredLocale } from "@/lib/i18n";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5077";
 
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
-const API_CULTURE = process.env.NEXT_PUBLIC_API_CULTURE ?? "en";
+const API_CULTURE = process.env.NEXT_PUBLIC_API_CULTURE ?? defaultLocale;
 
 export const apiConfig = {
   baseUrl: API_BASE_URL,
@@ -12,7 +14,8 @@ export const apiConfig = {
 
 export function buildApiUrl(path: string) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${apiConfig.baseUrl}/api/${apiConfig.version}/${apiConfig.culture}${normalizedPath}`;
+  const culture = typeof window === "undefined" ? apiConfig.culture : getStoredLocale();
+  return `${apiConfig.baseUrl}/api/${apiConfig.version}/${culture}${normalizedPath}`;
 }
 
 export function buildHubUrl(path: string) {

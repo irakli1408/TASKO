@@ -14,10 +14,13 @@ using Tasko.Application.Handlers.Chats.Commands.SendTaskMessage;
 using Tasko.Application.Handlers.Chats.Queries.GetTaskMessages;
 using Tasko.Application.Handlers.Chats.Queries.GetUnreadCount;
 using Tasko.Application.Handlers.Tasks.Commands.AssignOffer;
+using Tasko.Application.Handlers.Tasks.Commands.CancelTask;
+using Tasko.Application.Handlers.Tasks.Commands.CompleteTask;
 using Tasko.Application.Handlers.Tasks.Commands.CreateOffer;
 using Tasko.Application.Handlers.Tasks.Commands.CreateTask;
 using Tasko.Application.Handlers.Tasks.Commands.DeleteTaskImage;
 using Tasko.Application.Handlers.Tasks.Commands.PublishTask;
+using Tasko.Application.Handlers.Tasks.Commands.StartTaskProgress;
 using Tasko.Application.Handlers.Tasks.Commands.UpdateTask;
 using Tasko.Application.Handlers.Tasks.Commands.UploadTaskImages;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
@@ -119,6 +122,45 @@ public sealed class TasksController : ApiControllerBase
 
         await _cache.EvictByTagAsync("feed", ct);
         await _cache.EvictByTagAsync("tasks", ct);
+
+        return NoContent();
+    }
+
+    [HttpPost("{taskId:long}/start")]
+    [Authorize]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> Start([FromRoute] long taskId, CancellationToken ct)
+    {
+        await Sender.Send(new StartTaskProgressCommand(taskId), ct);
+
+        await _cache.EvictByTagAsync("tasks", ct);
+        await _cache.EvictByTagAsync("feed", ct);
+
+        return NoContent();
+    }
+
+    [HttpPost("{taskId:long}/complete")]
+    [Authorize]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> Complete([FromRoute] long taskId, CancellationToken ct)
+    {
+        await Sender.Send(new CompleteTaskCommand(taskId), ct);
+
+        await _cache.EvictByTagAsync("tasks", ct);
+        await _cache.EvictByTagAsync("feed", ct);
+
+        return NoContent();
+    }
+
+    [HttpPost("{taskId:long}/cancel")]
+    [Authorize]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> Cancel([FromRoute] long taskId, CancellationToken ct)
+    {
+        await Sender.Send(new CancelTaskCommand(taskId), ct);
+
+        await _cache.EvictByTagAsync("tasks", ct);
+        await _cache.EvictByTagAsync("feed", ct);
 
         return NoContent();
     }

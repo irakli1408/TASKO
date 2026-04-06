@@ -6,6 +6,8 @@ public sealed class TaskDto
     public long Id { get; init; }
     public long CreatedByUserId { get; init; }
     public long? AssignedToUserId { get; init; }
+    public string? AssignedToFirstName { get; init; }
+    public string? AssignedToLastName { get; init; }
 
     public string Title { get; init; } = null!;
     public string? Description { get; init; }

@@ -34,18 +34,25 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, IR
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip(skip)
             .Take(take)
+            .GroupJoin(
+                _db.Users.AsNoTracking(),
+                task => task.AssignedToUserId,
+                user => user.Id,
+                (task, users) => new { task, assigned = users.FirstOrDefault() })
             .Select(x => new TaskDto
             {
-                Id = x.Id,
-                CreatedByUserId = x.CreatedByUserId,
-                AssignedToUserId = x.AssignedToUserId,
-                Title = x.Title,
-                Description = x.Description,
-                Budget = x.Budget,
-                CategoryId = x.CategoryId,
-                LocationType = x.LocationType,
-                Status = x.Status.ToString(),
-                CreatedAtUtc = x.CreatedAtUtc
+                Id = x.task.Id,
+                CreatedByUserId = x.task.CreatedByUserId,
+                AssignedToUserId = x.task.AssignedToUserId,
+                AssignedToFirstName = x.assigned != null ? x.assigned.FirstName : null,
+                AssignedToLastName = x.assigned != null ? x.assigned.LastName : null,
+                Title = x.task.Title,
+                Description = x.task.Description,
+                Budget = x.task.Budget,
+                CategoryId = x.task.CategoryId,
+                LocationType = x.task.LocationType,
+                Status = x.task.Status.ToString(),
+                CreatedAtUtc = x.task.CreatedAtUtc
             })
             .ToListAsync(ct);
     }

@@ -1,208 +1,261 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { resolveHomePath, useAuth } from "@/components/auth-provider";
+import { useState } from "react";
+import { useAuth } from "@/components/auth-provider";
+import { useI18n } from "@/components/i18n-provider";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoLink } from "@/components/logo-link";
+import { NotificationsNavLink } from "@/components/notifications-nav-link";
 
-const navItems = [
-  { label: "Feed", href: "#feed" },
-  { label: "Create task", href: "#create" },
-  { label: "Profile", href: "#profile" },
-  { label: "Chat", href: "#chat" }
-];
+const categoryAccentClasses = [
+  "from-[#1b6fff] to-[#58a2ff]",
+  "from-[#19b86c] to-[#54d58f]",
+  "from-[#fb7a27] to-[#ff9a57]",
+  "from-[#7256ff] to-[#9a7fff]",
+  "from-[#17b0a7] to-[#41d4cb]",
+  "from-[#2f6bff] to-[#6e7cff]"
+] as const;
 
-const priorities = [
-  "Phone-first responsive layout",
-  "Fast task feed and task details",
-  "Simple auth and profile flow",
-  "Growth path for offers and realtime chat"
-];
-
-const screens = [
+const marketplaceCategories = [
   {
-    id: "feed",
-    title: "Task feed",
-    text: "Browse live task cards, filter offers, and move straight into a concrete job from the main marketplace view."
+    id: 1,
+    name: "Дом и ремонт",
+    subcategories: ["Уборка", "Сантехника", "Электрика", "Сборка мебели", "Мелкий ремонт"]
   },
   {
-    id: "create",
-    title: "Create task",
-    text: "A guided posting flow with category, budget and location that works as comfortably on mobile as it does on desktop."
+    id: 2,
+    name: "Переезды и перевозки",
+    subcategories: ["Грузчики", "Помощь с переездом", "Перенос мебели", "Погрузка / разгрузка"]
   },
   {
-    id: "profile",
-    title: "Profile and executor settings",
-    text: "A dashboard-style account area with reputation, categories, work areas and account controls in structured sections."
+    id: 3,
+    name: "Помощь и забота",
+    subcategories: ["Няня", "Помощь пожилым", "Сиделка", "Сопровождение"]
   },
   {
-    id: "chat",
-    title: "Task chat and notifications",
-    text: "Compact messenger and notifications screens built around quick actions, avatars and clear unread states."
+    id: 4,
+    name: "Животные",
+    subcategories: ["Выгул собак", "Присмотр", "Передержка", "Поездка к ветеринару"]
+  },
+  {
+    id: 5,
+    name: "Разовые поручения",
+    subcategories: ["Купить продукты", "Аптека", "Забрать посылку", "Срочная помощь"]
   }
-];
+] as const;
 
 export function SiteShell() {
-  const router = useRouter();
   const { status, user, logout } = useAuth();
+  const { t } = useI18n();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number>(1);
 
-  useEffect(() => {
-    if (status === "authenticated" && user) {
-      router.replace(resolveHomePath(user));
+  const selectedCategory =
+    marketplaceCategories.find((category) => category.id === selectedCategoryId) ?? marketplaceCategories[0];
+
+  const sections = [
+    {
+      eyebrow: t("common.feed"),
+      title: t("home.screen1Title"),
+      text: t("home.screen1Text"),
+      href: "/feed",
+      action: t("home.browseFeed")
+    },
+    {
+      eyebrow: t("common.createTask"),
+      title: t("home.screen2Title"),
+      text: t("home.screen2Text"),
+      href: "/tasks/create",
+      action: t("common.createTask")
+    },
+    {
+      eyebrow: t("common.profile"),
+      title: t("home.screen3Title"),
+      text: t("home.screen3Text"),
+      href: "/profile",
+      action: t("common.goToProfile")
+    },
+    {
+      eyebrow: t("home.navChat"),
+      title: t("home.screen4Title"),
+      text: t("home.screen4Text"),
+      href: "/notifications",
+      action: t("common.notifications")
     }
-  }, [router, status, user]);
+  ];
 
   return (
-    <main className="relative overflow-hidden py-5">
-      <section className="tasko-shell flex min-h-screen flex-col pb-12">
-        <header className="tasko-topbar px-4 py-3 md:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <LogoLink />
+    <main className="relative overflow-hidden py-4 sm:py-6">
+      <section className="tasko-shell flex min-h-screen flex-col gap-6 pb-12">
+        <section className="overflow-hidden rounded-[32px] bg-[#2a2c31] text-white shadow-[0_30px_80px_rgba(18,24,35,0.18)]">
+          <div className="border-b border-white/10 px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-4">
+                <LogoLink compact />
+                <div className="hidden min-w-[220px] rounded-full border border-white/10 bg-white/6 px-4 py-3 text-sm text-white/60 md:block">
+                  {t("home.heroBadge")}
+                </div>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-sm font-medium tasko-muted">
-              <nav className="flex flex-wrap gap-2">
-                {navItems.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-full px-3 py-2 transition hover:bg-[#f3f7ff] hover:text-[#1e3d8f]"
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                <div className="rounded-full border border-white/12 bg-white/6 px-1 py-1">
+                  <LanguageSwitcher />
+                </div>
+                {status === "authenticated" ? <NotificationsNavLink /> : null}
+                {status === "authenticated" ? (
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="rounded-full border border-white/20 bg-transparent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
                   >
-                    {item.label}
-                  </a>
-                ))}
-              </nav>
-
-              {status === "authenticated" ? (
-                <button
-                  type="button"
-                  onClick={() => void logout()}
-                  className="tasko-primary-btn px-4 py-2"
-                >
-                  Log out
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </header>
-
-        <section className="grid flex-1 items-center gap-10 py-8 lg:grid-cols-[1.12fr_0.88fr] lg:py-12">
-          <div className="space-y-7">
-            <div className="tasko-pill">
-              Find a specialist in minutes
-            </div>
-
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-[3.65rem]">
-                Find the right specialist and manage tasks in one clean workflow.
-              </h1>
-              <p className="max-w-2xl text-base leading-7 tasko-muted sm:text-lg">
-                Your existing backend already supports auth, task feed, task details, profile,
-                notifications and realtime chat. The frontend now follows a marketplace dashboard
-                design closer to the Tasko concept you shared.
-              </p>
-            </div>
-
-            <div className="tasko-card grid gap-4 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
-              <div className="grid gap-3 sm:grid-cols-3">
-                {["Cleaning", "Furniture", "Electric", "Plumbing", "Painting", "Repair"].map(
-                  (label) => (
-                    <div
-                      key={label}
-                      className="tasko-soft-card flex items-center justify-center px-4 py-3 text-sm font-semibold text-[#35507f]"
+                    {t("common.logout")}
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="rounded-full border border-white/20 bg-transparent px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                     >
-                      {label}
-                    </div>
-                  )
+                      {t("auth.login")}
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="rounded-full bg-white px-5 py-2.5 text-center text-sm font-semibold text-[#1b6fff] transition hover:bg-[#edf4ff]"
+                    >
+                      {t("auth.register")}
+                    </Link>
+                  </>
                 )}
               </div>
-              <div className="flex flex-col gap-3 sm:w-[220px]">
-                <Link
-                  href="/login"
-                  className="tasko-primary-btn"
-                >
-                  Open platform
-                </Link>
-                <Link
-                  href="/register"
-                  className="tasko-secondary-btn"
-                >
-                  Create account
-                </Link>
-              </div>
-            </div>
-
-            <div id="roadmap" className="grid gap-3 sm:grid-cols-2">
-              {priorities.map((item) => (
-                <div key={item} className="tasko-card p-4">
-                  <p className="text-sm font-medium text-[#38537f]">{item}</p>
-                </div>
-              ))}
             </div>
           </div>
 
-          <div className="tasko-card p-5">
-            <div className="grid gap-4">
-              <div className="tasko-card overflow-hidden p-0">
-                <div className="grid items-center gap-6 bg-gradient-to-r from-[#f6f9ff] to-[#fff8ec] p-6 lg:grid-cols-[1fr_170px]">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7d8fb3]">
-                      Tasko platform
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold leading-tight">
-                      Find a trusted specialist for your task
-                    </p>
-                    <div className="mt-4 flex gap-3">
-                      <button className="tasko-primary-btn px-4 py-2.5 text-xs">Create task</button>
-                      <button className="tasko-secondary-btn px-4 py-2.5 text-xs">Browse feed</button>
-                    </div>
+          <div className="relative px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+            <div className="absolute inset-y-0 right-0 hidden w-[40%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1),transparent_58%)] lg:block" />
+            <div className="absolute right-[12%] top-[22%] hidden h-44 w-44 rounded-full border border-white/10 bg-white/5 blur-[1px] lg:block" />
+            <div className="absolute right-[22%] top-[46%] hidden h-20 w-20 rounded-full bg-white/7 lg:block" />
+
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_290px] lg:items-center">
+              <div className="space-y-6">
+                <div className="md:hidden">
+                  <div className="tasko-pill border-white/15 bg-white/10 text-white/80">
+                    {t("home.heroBadge")}
                   </div>
-                  <div className="rounded-[24px] bg-white p-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      {["+", "tool", "check", "chat"].map((item) => (
-                        <div
-                          key={item}
-                          className="flex h-16 items-center justify-center rounded-2xl bg-[#edf3ff] text-xs font-semibold text-[#3f5e95]"
-                        >
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                </div>
+
+                <h1 className="max-w-3xl text-[2.2rem] font-semibold leading-[0.96] tracking-[-0.04em] sm:text-[3rem] lg:text-[3.8rem]">
+                  Найдите мастера для своей задачи быстро и просто
+                </h1>
+
+                <p className="max-w-2xl text-sm leading-7 text-white/78 sm:text-base">
+                  {t("home.heroText")}
+                </p>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link href="/register" className="rounded-full bg-[#2f6bff] px-6 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-[#2457d6]">
+                    {t("home.createAccount")}
+                  </Link>
+                  <Link href="/login" className="rounded-full border border-white/18 bg-white/8 px-6 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-white/12">
+                    {t("home.openPlatform")}
+                  </Link>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {["Bathroom repair", "Apartment cleaning", "Electrical setup", "Furniture assembly"].map(
-                  (task, index) => (
-                    <div key={task} className="tasko-soft-card p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.24em] text-[#8ba0c3]">
-                            Popular request
-                          </p>
-                          <p className="mt-2 text-base font-semibold">{task}</p>
-                        </div>
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#2f6bff]">
-                          0{index + 1}
-                        </span>
+              <div className="mx-auto w-full max-w-[230px] rounded-[32px] border border-white/14 bg-white/6 p-3 shadow-[0_20px_36px_rgba(0,0,0,0.2)] backdrop-blur sm:max-w-[260px] md:max-w-[280px] lg:mr-2 lg:mt-6">
+                <div className="rounded-[26px] bg-[#23252a] p-3">
+                  <p className="mb-3 text-xl font-semibold">Tasko</p>
+                  <div className="space-y-2.5">
+                    {marketplaceCategories.slice(0, 4).map((item, index) => (
+                      <div
+                        key={item.id}
+                        className={`rounded-[22px] bg-gradient-to-r px-4 py-4 text-base font-semibold text-white ${categoryAccentClasses[index]}`}
+                      >
+                        {item.name}
                       </div>
-                    </div>
-                  )
-                )}
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {screens.map((screen, index) => (
-            <article id={screen.id} key={screen.id} className="tasko-card p-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                Screen 0{index + 1}
+        <section className="tasko-card p-5 sm:p-6 lg:p-8">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#7a8cac]">{t("home.platformLabel")}</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                {t("home.platformTitle")}
+              </h2>
+            </div>
+            <div className="flex gap-3">
+              <Link href="/tasks/create" className="tasko-primary-btn min-h-[48px] px-5">
+                {t("common.createTask")}
+              </Link>
+              <Link href="/feed" className="tasko-secondary-btn min-h-[48px] px-5">
+                {t("home.browseFeed")}
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {marketplaceCategories.map((category, index) => {
+              const isActive = category.id === selectedCategory.id;
+
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategoryId(category.id)}
+                  className={`relative overflow-hidden rounded-[24px] bg-gradient-to-r px-5 py-5 text-left text-white shadow-[0_16px_30px_rgba(46,78,145,0.18)] transition hover:scale-[1.01] ${categoryAccentClasses[index]} ${
+                    isActive ? "ring-4 ring-[#dfeaff]" : ""
+                  }`}
+                >
+                  <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/12" />
+                  <div className="absolute bottom-0 right-0 h-16 w-16 rounded-tl-[28px] bg-white/10" />
+                  <div className="relative flex min-h-[96px] flex-col justify-between">
+                    <p className="max-w-[160px] text-xl font-semibold leading-tight">{category.name}</p>
+                    {isActive ? (
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-[#1f9e76]">
+                        ✓
+                      </span>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 rounded-[26px] bg-[#f5f8fd] px-4 py-5 sm:px-5">
+            <p className="text-xl font-semibold tracking-tight text-[#16233b]">{selectedCategory.name}</p>
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              {selectedCategory.subcategories.map((subcategory, index) => (
+                <span
+                  key={subcategory}
+                  className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
+                    index === 0
+                      ? "bg-[#1fbea1] text-white"
+                      : "bg-white text-[#334764] shadow-[0_6px_16px_rgba(53,83,127,0.08)]"
+                  }`}
+                >
+                  {subcategory}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          {sections.map((card) => (
+            <article key={card.href} className="tasko-card flex flex-col p-5 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                {card.eyebrow}
               </p>
-              <h2 className="mb-3 text-2xl font-semibold tracking-tight">{screen.title}</h2>
-              <p className="text-sm leading-7 tasko-muted">{screen.text}</p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight">{card.title}</h3>
+              <p className="mt-3 flex-1 text-sm leading-7 tasko-muted">{card.text}</p>
+              <Link href={card.href} className="tasko-secondary-btn mt-5 min-h-[48px] px-5">
+                {card.action}
+              </Link>
             </article>
           ))}
         </section>

@@ -63,16 +63,23 @@ public sealed class GetTaskFeedQueryHandler
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip(skip)
             .Take(take)
-            .Select(x => new TaskFeedItemDto
-            {
-                Id = x.Id,
-                Title = x.Title,
-                Description = x.Description,
-                Budget = x.Budget,
-                CategoryId = x.CategoryId,
-                LocationType = x.LocationType,
-                CreatedAtUtc = x.CreatedAtUtc
-            })
+            .Join(
+                _db.Users.AsNoTracking(),
+                task => task.CreatedByUserId,
+                user => user.Id,
+                (task, user) => new TaskFeedItemDto
+                {
+                    Id = task.Id,
+                    CreatedByUserId = task.CreatedByUserId,
+                    CreatedByFirstName = user.FirstName,
+                    CreatedByLastName = user.LastName,
+                    Title = task.Title,
+                    Description = task.Description,
+                    Budget = task.Budget,
+                    CategoryId = task.CategoryId,
+                    LocationType = task.LocationType,
+                    CreatedAtUtc = task.CreatedAtUtc
+                })
             .ToListAsync(ct);
 
         return items;

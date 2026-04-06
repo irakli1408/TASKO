@@ -6,10 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GuardedPage } from "@/components/guarded-page";
 import { useAuth } from "@/components/auth-provider";
+import { useI18n } from "@/components/i18n-provider";
 import { buildHubUrl } from "@/lib/api";
 import { getErrorMessage } from "@/lib/profile";
 import {
   ChatMessage,
+  TaskDetails,
   getTaskDetails,
   getTaskMessages,
   getTaskUnreadCount,
@@ -24,6 +26,7 @@ type TaskChatViewProps = {
 export function TaskChatView({ taskId }: TaskChatViewProps) {
   const router = useRouter();
   const { status, user, getAccessToken } = useAuth();
+  const { locale, t } = useI18n();
   const connectionRef = useRef<HubConnection | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -31,6 +34,7 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
   const typingUsersTimeoutsRef = useRef<Map<string, number>>(new Map());
   const lastMarkedMessageIdRef = useRef(0);
   const markReadInFlightRef = useRef(false);
+  const [taskDetails, setTaskDetails] = useState<TaskDetails | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -75,6 +79,7 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
 
         const sortedMessages = [...taskMessages].sort((left, right) => left.id - right.id);
 
+        setTaskDetails(task);
         setTaskTitle(task.title);
         setMessages(sortedMessages);
         setUnreadCount(unread.count);
@@ -85,13 +90,13 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
           await markLatestAsRead(lastMessageId);
         }
       } catch (loadError) {
-        setError(getErrorMessage(loadError, "Could not load task chat."));
+        setError(getErrorMessage(loadError, t("chat.loadError")));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [getAccessToken, router, status, taskId]
+    [getAccessToken, router, status, taskId, t]
   );
 
   const markLatestAsRead = useCallback(
@@ -305,6 +310,49 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
   }, [messages]);
 
   const canSend = useMemo(() => Boolean(draft.trim()) && !sending, [draft, sending]);
+  const chatCompanion = useMemo(() => {
+    if (!taskDetails || !user) {
+      return null;
+    }
+
+    if (taskDetails.createdByUserId === user.id) {
+      if (!taskDetails.assignedToUserId) {
+        return {
+          name: t("chat.executorNotAssigned"),
+          role: t("chat.roleExecutor"),
+          initials: "--"
+        };
+      }
+
+      return {
+        name: formatParticipantName(
+          taskDetails.assignedToFirstName,
+          taskDetails.assignedToLastName,
+          taskDetails.assignedToUserId
+        ),
+        role: t("chat.roleExecutor"),
+        initials: getParticipantInitials(
+          taskDetails.assignedToFirstName,
+          taskDetails.assignedToLastName,
+          taskDetails.assignedToUserId
+        )
+      };
+    }
+
+    return {
+      name: formatParticipantName(
+        taskDetails.createdByFirstName,
+        taskDetails.createdByLastName,
+        taskDetails.createdByUserId
+      ),
+      role: t("chat.roleCustomer"),
+      initials: getParticipantInitials(
+        taskDetails.createdByFirstName,
+        taskDetails.createdByLastName,
+        taskDetails.createdByUserId
+      )
+    };
+  }, [taskDetails, user, t]);
 
   function scheduleTypingStop() {
     if (typingStopTimerRef.current) {
@@ -367,7 +415,7 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
       if (connection?.state === HubConnectionState.Connected) {
         await connection.invoke("TypingStop", taskId).catch(() => undefined);
         await connection.invoke("SendMessage", taskId, messageText);
-        setSuccess("Message sent.");
+        setSuccess(t("chat.messageSent"));
         return;
       }
 
@@ -380,13 +428,13 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
       const sentMessage = await sendTaskMessage(token, taskId, messageText);
 
       setMessages((current) => [...current, sentMessage]);
-      setSuccess("Message sent.");
+      setSuccess(t("chat.messageSent"));
 
       await markTaskMessagesRead(token, taskId, sentMessage.id).catch(() => undefined);
       setUnreadCount(0);
     } catch (sendError) {
       setDraft((current) => current || messageText);
-      setError(getErrorMessage(sendError, "Could not send message."));
+      setError(getErrorMessage(sendError, t("chat.sendError")));
     } finally {
       setSending(false);
     }
@@ -394,11 +442,11 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
 
   return (
     <GuardedPage
-      title="Task chat"
-      description="Discuss scope, timing and next steps for this task in one shared conversation."
+      title={t("chat.title")}
+      description={t("chat.description")}
     >
       {loading ? (
-        <section className="tasko-card p-8">Loading chat...</section>
+        <section className="tasko-card p-8">{t("chat.loading")}</section>
       ) : (
         <div className="grid gap-6 xl:grid-cols-[0.72fr_0.28fr]">
           <section className="tasko-card p-0 overflow-hidden">
@@ -406,11 +454,26 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                    Conversation
+                    {t("chat.conversation")}
                   </p>
                   <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--tasko-text)]">
-                    {taskTitle || `Task #${taskId}`}
+                    {taskTitle || `${t("feed.task")} #${taskId}`}
                   </h2>
+                  {chatCompanion ? (
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef4ff] text-sm font-semibold text-[#2f6bff]">
+                        {chatCompanion.initials}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--tasko-text)]">
+                          {chatCompanion.name}
+                        </p>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[#8ba0c3]">
+                          {chatCompanion.role}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -424,10 +487,10 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
                     }`}
                   >
                     {realtimeState === "live"
-                      ? "Realtime active"
+                      ? t("chat.realtimeActive")
                       : realtimeState === "connecting"
-                        ? "Connecting..."
-                        : "Offline fallback"}
+                        ? t("chat.connecting")
+                        : t("chat.offlineFallback")}
                   </div>
                   <button
                     type="button"
@@ -435,10 +498,10 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
                     disabled={refreshing}
                     className="tasko-secondary-btn"
                   >
-                    {refreshing ? "Refreshing..." : "Refresh"}
+                    {refreshing ? t("chat.refreshing") : t("chat.refresh")}
                   </button>
                   <Link href={`/tasks/${taskId}`} className="tasko-primary-btn">
-                    Back to details
+                    {t("chat.backToDetails")}
                   </Link>
                 </div>
               </div>
@@ -462,7 +525,7 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
             >
               {messages.length === 0 ? (
                 <div className="tasko-soft-card p-5 text-sm tasko-muted">
-                  No messages yet. Start the conversation with the other participant.
+                  {t("chat.noMessages")}
                 </div>
               ) : (
                 messages.map((message) => {
@@ -495,7 +558,7 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
                         }`}
                         >
                           <div className="mb-2 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.18em]">
-                            <span>{isMine ? "You" : getSenderDisplayName(message)}</span>
+                            <span>{isMine ? t("chat.you") : getSenderDisplayName(message, t)}</span>
                             <span
                               className={`rounded-full px-2 py-1 tracking-[0.14em] ${
                                 isMine
@@ -503,10 +566,10 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
                                   : "bg-white text-[#59729e]"
                               }`}
                             >
-                              {isMine ? "Sent" : "Received"}
+                              {isMine ? t("chat.sent") : t("chat.received")}
                             </span>
                             <span className={isMine ? "text-white/75" : "text-[#8ba0c3]"}>
-                            {formatDate(message.createdAtUtc)}
+                            {formatDate(message.createdAtUtc, locale, t)}
                             </span>
                           </div>
                           <p className="text-sm leading-7">{message.text}</p>
@@ -521,24 +584,26 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
 
             <div className="border-t border-[var(--tasko-border)] p-6">
               <label className="block space-y-2">
-                <span className="tasko-label">New message</span>
+                <span className="tasko-label">{t("chat.newMessage")}</span>
                 <textarea
                   value={draft}
                   onChange={(event) => handleDraftChange(event.target.value)}
                   rows={4}
                   className="tasko-input"
-                  placeholder="Write what needs to happen next, confirm timing, ask clarifying questions..."
+                  placeholder={t("chat.placeholder")}
                 />
               </label>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm tasko-muted">
-                    Keep messages task-specific so both sides can track the agreement.
+                    {t("chat.keepTaskSpecific")}
                   </p>
                   {typingUsers.length > 0 ? (
                     <p className="text-sm font-medium text-[#2f6bff]">
-                      {typingUsers.length === 1 ? "The other participant is typing..." : `${typingUsers.length} users are typing...`}
+                      {typingUsers.length === 1
+                        ? t("chat.otherTyping")
+                        : `${typingUsers.length} ${t("chat.usersTyping")}`}
                     </p>
                   ) : null}
                 </div>
@@ -548,7 +613,7 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
                   disabled={!canSend}
                   className="tasko-primary-btn disabled:opacity-70"
                 >
-                  {sending ? "Sending..." : "Send message"}
+                  {sending ? t("task.sending") : t("chat.sendMessage")}
                 </button>
               </div>
             </div>
@@ -557,20 +622,21 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
           <aside className="grid content-start gap-6">
             <div className="tasko-card p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                Chat status
+                {t("chat.chatStatus")}
               </p>
               <div className="mt-4 grid gap-3">
-                <ChatStat label="Messages" value={String(messages.length)} />
-                <ChatStat label="Unread on load" value={String(unreadCount)} />
-                <ChatStat label="Task" value={`#${taskId}`} />
+                <ChatStat label={t("chat.messages")} value={String(messages.length)} />
+                <ChatStat label={t("chat.unreadOnLoad")} value={String(unreadCount)} />
+                <ChatStat label={t("feed.task")} value={`#${taskId}`} />
+                <ChatStat label={t("chat.participant")} value={chatCompanion?.name ?? t("profile.unknown")} />
                 <ChatStat
-                  label="Connection"
+                  label={t("chat.connection")}
                   value={
                     realtimeState === "live"
-                      ? "SignalR live"
+                      ? t("chat.signalrLive")
                       : realtimeState === "connecting"
-                        ? "Reconnecting"
-                        : "REST fallback"
+                        ? t("chat.reconnecting")
+                        : t("chat.restFallback")
                   }
                 />
               </div>
@@ -578,11 +644,10 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
 
             <div className="tasko-card p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                Next step
+                {t("chat.nextStep")}
               </p>
               <p className="mt-4 text-sm leading-7 tasko-muted">
-                This chat now listens to your backend task hub in realtime and keeps REST loading as a safe fallback if
-                the live connection drops.
+                {t("chat.nextStepText")}
               </p>
             </div>
           </aside>
@@ -601,14 +666,14 @@ function ChatStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, locale: string, t: (key: string) => string) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Unknown";
+    return t("profile.unknown");
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -616,14 +681,14 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-function getSenderDisplayName(message: ChatMessage) {
+function getSenderDisplayName(message: ChatMessage, t: (key: string) => string) {
   const fullName = `${message.senderFirstName ?? ""} ${message.senderLastName ?? ""}`.trim();
 
   if (fullName) {
     return fullName;
   }
 
-  return `User #${message.senderUserId}`;
+  return `${t("task.executor")} #${message.senderUserId}`;
 }
 
 function getMessageInitials(message: ChatMessage, isMine: boolean) {
@@ -642,4 +707,34 @@ function getMessageInitials(message: ChatMessage, isMine: boolean) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
+}
+
+function formatParticipantName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  userId: number
+) {
+  const fullName = [firstName?.trim(), lastName?.trim()].filter(Boolean).join(" ");
+
+  if (fullName) {
+    return fullName;
+  }
+
+  return `User #${userId}`;
+}
+
+function getParticipantInitials(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  userId: number
+) {
+  const first = firstName?.trim()?.[0] ?? "";
+  const last = lastName?.trim()?.[0] ?? "";
+  const initials = `${first}${last}`.toUpperCase();
+
+  if (initials) {
+    return initials;
+  }
+
+  return `U${String(userId).slice(-1)}`;
 }

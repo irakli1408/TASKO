@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resolveHomePath, useAuth } from "@/components/auth-provider";
 import { GuardedPage } from "@/components/guarded-page";
+import { useI18n } from "@/components/i18n-provider";
 import { LocationType, UserRoleType } from "@/lib/auth";
 import { resolveAssetUrl } from "@/lib/api";
 import {
@@ -32,23 +33,10 @@ type PersonalForm = {
   avatarUrl: string;
 };
 
-const locationOptions: { value: LocationType; label: string }[] = [
-  { value: LocationType.AllCity, label: "All city" },
-  { value: LocationType.Mtatsminda, label: "Mtatsminda" },
-  { value: LocationType.Vake, label: "Vake" },
-  { value: LocationType.Saburtalo, label: "Saburtalo" },
-  { value: LocationType.Krtsanisi, label: "Krtsanisi" },
-  { value: LocationType.Isani, label: "Isani" },
-  { value: LocationType.Samgori, label: "Samgori" },
-  { value: LocationType.Chugureti, label: "Chugureti" },
-  { value: LocationType.Didube, label: "Didube" },
-  { value: LocationType.Nadzaladevi, label: "Nadzaladevi" },
-  { value: LocationType.Gldani, label: "Gldani" }
-];
-
 export function ProfileSettings() {
   const router = useRouter();
   const { status, setUser, getAccessToken } = useAuth();
+  const { locale, t } = useI18n();
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
@@ -79,6 +67,23 @@ export function ProfileSettings() {
 
   const canBeExecutor =
     profile?.roleType === UserRoleType.Executor || profile?.roleType === UserRoleType.Both;
+
+  const locationOptions = useMemo<{ value: LocationType; label: string }[]>(
+    () => [
+      { value: LocationType.AllCity, label: t("location.allCity") },
+      { value: LocationType.Mtatsminda, label: t("location.mtatsminda") },
+      { value: LocationType.Vake, label: t("location.vake") },
+      { value: LocationType.Saburtalo, label: t("location.saburtalo") },
+      { value: LocationType.Krtsanisi, label: t("location.krtsanisi") },
+      { value: LocationType.Isani, label: t("location.isani") },
+      { value: LocationType.Samgori, label: t("location.samgori") },
+      { value: LocationType.Chugureti, label: t("location.chugureti") },
+      { value: LocationType.Didube, label: t("location.didube") },
+      { value: LocationType.Nadzaladevi, label: t("location.nadzaladevi") },
+      { value: LocationType.Gldani, label: t("location.gldani") }
+    ],
+    [t]
+  );
 
   const avatarSrc = useMemo(() => resolveAssetUrl(profile?.avatarUrl), [profile?.avatarUrl]);
 
@@ -128,19 +133,19 @@ export function ProfileSettings() {
           setSavedCategories(myCategories);
           setSelectedLocations(myLocations.locationTypes);
           setSavedLocations(myLocations.locationTypes);
-        } else {
+      } else {
           setSelectedCategories([]);
           setSavedCategories([]);
           setSelectedLocations([]);
           setSavedLocations([]);
         }
       } catch (loadError) {
-        setError(getErrorMessage(loadError, "Could not load your profile."));
+        setError(getErrorMessage(loadError, t("profile.loadError")));
       } finally {
         setLoading(false);
       }
     },
-    [getAccessToken, router, setUser]
+    [getAccessToken, router, setUser, t]
   );
 
   useEffect(() => {
@@ -162,10 +167,10 @@ export function ProfileSettings() {
 
   const executorStatusText = useMemo(() => {
     if (!profile) return "";
-    if (profile.isExecutorActive) return "Executor mode is active";
-    if (canBeExecutor) return "Executor role is available but not active";
-    return "Customer account";
-  }, [canBeExecutor, profile]);
+    if (profile.isExecutorActive) return t("profile.executorActive");
+    if (canBeExecutor) return t("profile.executorAvailable");
+    return t("profile.customerAccount");
+  }, [canBeExecutor, profile, t]);
 
   const personalDirty = useMemo(() => {
     if (!profile) {
@@ -250,7 +255,7 @@ export function ProfileSettings() {
 
   async function handlePersonalSave() {
     if (!personalDirty) {
-      setSuccess("Nothing changed in personal details.");
+      setSuccess(t("profile.nothingChanged"));
       return;
     }
 
@@ -271,9 +276,9 @@ export function ProfileSettings() {
       );
 
       updateLocalProfile(nextProfile);
-      setSuccess("Profile details saved.");
+      setSuccess(t("profile.saved"));
     } catch (saveError) {
-      setError(getErrorMessage(saveError, "Could not save profile details."));
+      setError(getErrorMessage(saveError, t("profile.personalSaveError")));
     } finally {
       setSavingPersonal(false);
       setActiveSection(null);
@@ -289,9 +294,9 @@ export function ProfileSettings() {
     try {
       const nextProfile = await withToken((token) => uploadMyAvatar(token, file));
       updateLocalProfile(nextProfile);
-      setSuccess("Avatar uploaded.");
+      setSuccess(t("profile.avatarUploaded"));
     } catch (uploadError) {
-      setError(getErrorMessage(uploadError, "Could not upload avatar."));
+      setError(getErrorMessage(uploadError, t("profile.avatarUploadError")));
       setAvatarFileName("");
     } finally {
       setUploadingAvatar(false);
@@ -332,9 +337,11 @@ export function ProfileSettings() {
       }
 
       router.replace(resolveHomePath(mapProfileToCurrentUser(nextProfile)));
-      setSuccess(profile.isExecutorActive ? "Executor mode disabled." : "Executor mode enabled.");
+      setSuccess(
+        profile.isExecutorActive ? t("profile.executorDisabled") : t("profile.executorEnabled")
+      );
     } catch (executorError) {
-      setError(getErrorMessage(executorError, "Could not update executor mode."));
+      setError(getErrorMessage(executorError, t("profile.executorToggleError")));
     } finally {
       setSavingExecutor(false);
       setActiveSection(null);
@@ -343,7 +350,7 @@ export function ProfileSettings() {
 
   async function handleExecutorProfileSave() {
     if (!executorDirty) {
-      setSuccess("Executor details are already up to date.");
+      setSuccess(t("profile.executorUpToDate"));
       return;
     }
 
@@ -361,9 +368,9 @@ export function ProfileSettings() {
       );
 
       updateLocalProfile(nextProfile);
-      setSuccess("Executor details saved.");
+      setSuccess(t("profile.executorSaved"));
     } catch (executorError) {
-      setError(getErrorMessage(executorError, "Could not save executor details."));
+      setError(getErrorMessage(executorError, t("profile.executorSaveError")));
     } finally {
       setSavingExecutor(false);
       setActiveSection(null);
@@ -372,7 +379,7 @@ export function ProfileSettings() {
 
   async function handleCategoriesSave() {
     if (selectedCategories.length === 0) {
-      setError("Choose at least one category before saving.");
+      setError(t("profile.chooseCategory"));
       return;
     }
 
@@ -388,9 +395,9 @@ export function ProfileSettings() {
 
       setSelectedCategories(updated);
       setSavedCategories(updated);
-      setSuccess("Executor categories saved.");
+      setSuccess(t("profile.categoriesSaved"));
     } catch (categoriesError) {
-      setError(getErrorMessage(categoriesError, "Could not save executor categories."));
+      setError(getErrorMessage(categoriesError, t("profile.categoriesError")));
     } finally {
       setSavingCategories(false);
       setActiveSection(null);
@@ -399,7 +406,7 @@ export function ProfileSettings() {
 
   async function handleLocationsSave() {
     if (selectedLocations.length === 0) {
-      setError("Choose at least one working location before saving.");
+      setError(t("profile.chooseLocation"));
       return;
     }
 
@@ -415,9 +422,9 @@ export function ProfileSettings() {
 
       setSelectedLocations(updated.locationTypes);
       setSavedLocations(updated.locationTypes);
-      setSuccess("Executor working locations saved.");
+      setSuccess(t("profile.locationsSaved"));
     } catch (locationsError) {
-      setError(getErrorMessage(locationsError, "Could not save working locations."));
+      setError(getErrorMessage(locationsError, t("profile.locationsError")));
     } finally {
       setSavingLocations(false);
       setActiveSection(null);
@@ -442,12 +449,12 @@ export function ProfileSettings() {
 
   return (
     <GuardedPage
-      title="Profile"
-      description="Manage account information, executor status, categories and working locations from one responsive settings area."
+      title={t("profile.title")}
+      description={t("profile.description")}
     >
       {loading || !profile ? (
         <section className="tasko-card p-6">
-          Loading profile...
+          {t("profile.loading")}
         </section>
       ) : (
         <div className="grid gap-6">
@@ -492,16 +499,16 @@ export function ProfileSettings() {
 
               <div className="mb-5 flex flex-wrap gap-3 text-sm">
                 <span className="rounded-full bg-[#f4f7fc] px-3 py-2 font-medium text-[#607392]">
-                  Role: {getRoleLabel(profile.roleType)}
+                  {t("profile.role")}: {getRoleLabel(profile.roleType, t)}
                 </span>
                 <span className="rounded-full bg-[#f4f7fc] px-3 py-2 font-medium text-[#607392]">
-                  Created: {formatDate(profile.createdAtUtc)}
+                  {t("profile.created")}: {formatDate(profile.createdAtUtc, locale, t)}
                 </span>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="tasko-label">First name</span>
+                  <span className="tasko-label">{t("auth.firstName")}</span>
                   <input
                     value={personalForm.firstName}
                     onChange={(event) =>
@@ -512,7 +519,7 @@ export function ProfileSettings() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="tasko-label">Last name</span>
+                  <span className="tasko-label">{t("auth.lastName")}</span>
                   <input
                     value={personalForm.lastName}
                     onChange={(event) =>
@@ -523,7 +530,7 @@ export function ProfileSettings() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="tasko-label">Phone</span>
+                  <span className="tasko-label">{t("auth.phone")}</span>
                   <input
                     value={personalForm.phone}
                     onChange={(event) =>
@@ -534,15 +541,15 @@ export function ProfileSettings() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="tasko-label">Avatar from your computer</span>
+                  <span className="tasko-label">{t("profile.avatarFromComputer")}</span>
                   <label className="flex min-h-[56px] cursor-pointer items-center justify-between rounded-[1.2rem] border border-dashed border-[#cdd9ee] bg-[#f8fbff] px-4 py-3 text-sm text-[#607392] transition hover:border-[#2f6bff] hover:bg-[#f4f8ff]">
                     <span className="truncate pr-3">
                       {uploadingAvatar
-                        ? "Uploading avatar..."
-                        : avatarFileName || "Choose image file"}
+                        ? t("profile.uploadingAvatar")
+                        : avatarFileName || t("profile.chooseImage")}
                     </span>
                     <span className="rounded-full bg-white px-3 py-1.5 font-semibold text-[#315294] shadow-[0_10px_24px_rgba(47,107,255,0.08)]">
-                      Browse
+                      {t("profile.browse")}
                     </span>
                     <input
                       type="file"
@@ -560,14 +567,14 @@ export function ProfileSettings() {
                     />
                   </label>
                   <p className="text-xs tasko-muted">
-                    Upload a local photo instead of pasting a URL.
+                    {t("profile.uploadLocalPhoto")}
                   </p>
                 </label>
               </div>
 
               {avatarSrc ? (
                 <div className="mt-4 rounded-[1.4rem] border border-[#e5edf8] bg-[#f8fbff] p-4">
-                  <p className="tasko-label mb-3">Current avatar</p>
+                  <p className="tasko-label mb-3">{t("profile.currentAvatar")}</p>
                   <div className="flex items-center gap-4">
                     <img
                       src={avatarSrc}
@@ -575,14 +582,16 @@ export function ProfileSettings() {
                       className="h-20 w-20 rounded-full object-cover ring-4 ring-white"
                     />
                     <div className="text-sm tasko-muted">
-                      {uploadingAvatar ? "Uploading new image..." : "Your current profile photo is active."}
+                      {uploadingAvatar
+                        ? t("profile.uploadingImage")
+                        : t("profile.currentAvatarActive")}
                     </div>
                   </div>
                 </div>
               ) : null}
 
               <label className="mt-4 block space-y-2">
-                <span className="tasko-label">About</span>
+                <span className="tasko-label">{t("profile.about")}</span>
                 <textarea
                   value={personalForm.about}
                   onChange={(event) =>
@@ -590,14 +599,17 @@ export function ProfileSettings() {
                   }
                   rows={4}
                   className="tasko-input"
-                  placeholder="Tell customers and executors a bit about yourself"
+                  placeholder={t("profile.aboutPlaceholder")}
                 />
               </label>
 
               <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
                 <div className="text-sm tasko-muted">
-                  Rating: <span className="font-semibold text-[var(--tasko-text)]">{profile.ratingAverage.toFixed(1)}</span>
-                  {" "}({profile.ratingCount} reviews)
+                  {t("profile.rating")}:{" "}
+                  <span className="font-semibold text-[var(--tasko-text)]">
+                    {profile.ratingAverage.toFixed(1)}
+                  </span>{" "}
+                  ({profile.ratingCount} {t("profile.reviews")})
                 </div>
                 <button
                   type="button"
@@ -606,29 +618,28 @@ export function ProfileSettings() {
                   className="tasko-primary-btn disabled:opacity-70"
                 >
                   {savingPersonal && activeSection === "personal"
-                    ? "Saving..."
+                    ? t("profile.saving")
                     : personalDirty
-                      ? "Save personal details"
-                      : "Personal details saved"}
+                      ? t("profile.savePersonal")
+                      : t("profile.personalSaved")}
                 </button>
               </div>
             </article>
 
             <article className="tasko-card p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                Executor mode
+                {t("profile.executorMode")}
               </p>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-                Activate your working profile
+                {t("profile.activateWorkingProfile")}
               </h2>
               <p className="mt-3 text-sm leading-7 tasko-muted">
-                Your backend routes active executors to the feed. Here you can enable or disable that mode
-                and update your base executor data.
+                {t("profile.executorText")}
               </p>
 
               <div className="mt-5 grid gap-4">
                 <label className="space-y-2">
-                  <span className="tasko-label">Main location</span>
+                  <span className="tasko-label">{t("profile.mainLocation")}</span>
                   <select
                     value={executorLocationType}
                     onChange={(event) => setExecutorLocationType(Number(event.target.value) as LocationType)}
@@ -643,7 +654,7 @@ export function ProfileSettings() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="tasko-label">Experience years</span>
+                  <span className="tasko-label">{t("profile.experienceYears")}</span>
                   <input
                     value={experienceYears}
                     onChange={(event) => setExperienceYears(event.target.value)}
@@ -662,10 +673,10 @@ export function ProfileSettings() {
                   className="tasko-primary-btn disabled:opacity-70"
                 >
                   {savingExecutor && activeSection === "executor"
-                    ? "Updating..."
+                    ? t("profile.executorUpdating")
                     : profile.isExecutorActive
-                      ? "Disable executor mode"
-                      : "Enable executor mode"}
+                      ? t("profile.disableExecutor")
+                      : t("profile.enableExecutor")}
                 </button>
 
                 {canBeExecutor ? (
@@ -675,7 +686,7 @@ export function ProfileSettings() {
                     disabled={savingExecutor || !executorDirty}
                     className="tasko-secondary-btn disabled:opacity-70"
                   >
-                    {executorDirty ? "Save executor details" : "Executor details saved"}
+                    {executorDirty ? t("profile.saveExecutorDetails") : t("profile.executorDetailsSaved")}
                   </button>
                 ) : null}
               </div>
@@ -686,10 +697,10 @@ export function ProfileSettings() {
             <section className="grid gap-6 xl:grid-cols-2">
               <article className="tasko-card p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                  Categories
+                  {t("profile.categories")}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-                  Choose what work you do
+                  {t("profile.chooseWork")}
                 </h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {categories.map((category) => {
@@ -719,17 +730,17 @@ export function ProfileSettings() {
                   className="tasko-primary-btn mt-5 disabled:opacity-70"
                 >
                   {savingCategories && activeSection === "categories"
-                    ? "Saving..."
-                    : "Save categories"}
+                    ? t("profile.saving")
+                    : t("profile.saveCategories")}
                 </button>
               </article>
 
               <article className="tasko-card p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                  Working areas
+                  {t("profile.workingAreas")}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-                  Select where you accept tasks
+                  {t("profile.selectAreas")}
                 </h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {locationOptions.map((location) => {
@@ -759,8 +770,8 @@ export function ProfileSettings() {
                   className="tasko-primary-btn mt-5 disabled:opacity-70"
                 >
                   {savingLocations && activeSection === "locations"
-                    ? "Saving..."
-                    : "Save locations"}
+                    ? t("profile.saving")
+                    : t("profile.saveLocations")}
                 </button>
               </article>
             </section>
@@ -771,20 +782,20 @@ export function ProfileSettings() {
   );
 }
 
-function getRoleLabel(roleType: number) {
-  if (roleType === UserRoleType.Executor) return "Executor";
-  if (roleType === UserRoleType.Both) return "Customer + Executor";
-  return "Customer";
+function getRoleLabel(roleType: number, t: (key: string) => string) {
+  if (roleType === UserRoleType.Executor) return t("profile.roleExecutor");
+  if (roleType === UserRoleType.Both) return t("profile.roleBoth");
+  return t("profile.roleCustomer");
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, locale: string, t: (key: string) => string) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Unknown";
+    return t("profile.unknown");
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
     day: "numeric"

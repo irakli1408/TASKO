@@ -5,6 +5,9 @@ namespace Tasko.Application.DTO.Tasks;
 public sealed class TaskFeedItemDto
 {
     public long Id { get; set; }
+    public long CreatedByUserId { get; set; }
+    public string CreatedByFirstName { get; set; } = string.Empty;
+    public string CreatedByLastName { get; set; } = string.Empty;
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public decimal? Budget { get; set; }

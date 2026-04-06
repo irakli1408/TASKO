@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
+import { useI18n } from "@/components/i18n-provider";
 import {
   createNotificationsHubConnection,
   getNotificationsUnreadCount
@@ -10,6 +11,7 @@ import {
 
 export function NotificationsNavLink() {
   const { status, getAccessToken } = useAuth();
+  const { t } = useI18n();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export function NotificationsNavLink() {
 
   return (
     <Link href="/notifications" className="tasko-secondary-btn relative px-4 py-2">
-      Notifications
+      {t("common.notifications")}
       {count > 0 ? (
         <span className="ml-2 inline-flex min-w-6 items-center justify-center rounded-full bg-[#2f6bff] px-2 py-0.5 text-xs font-semibold text-white">
           {count > 99 ? "99+" : count}
