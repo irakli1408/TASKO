@@ -47,13 +47,41 @@ public sealed class MarkMessagesReadCommandHandler : IRequestHandler<MarkMessage
         {
             state = new ChatReadState(request.TaskId, userId, targetId);
             _db.ChatReadStates.Add(state);
+
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException)
+            {
+                if (_db is DbContext dbContext)
+                {
+                    var pendingInsert = dbContext.ChangeTracker
+                        .Entries<ChatReadState>()
+                        .FirstOrDefault(entry =>
+                            entry.State == EntityState.Added &&
+                            entry.Entity.TaskId == request.TaskId &&
+                            entry.Entity.UserId == userId);
+
+                    if (pendingInsert is not null)
+                    {
+                        pendingInsert.State = EntityState.Detached;
+                    }
+                }
+
+                state = await _db.ChatReadStates
+                    .FirstOrDefaultAsync(x => x.TaskId == request.TaskId && x.UserId == userId, ct)
+                    ?? throw new Exception("ChatReadState not found");
+
+                state.MarkReadTo(targetId);
+                await _db.SaveChangesAsync(ct);
+            }
         }
         else
         {
             state.MarkReadTo(targetId);
+            await _db.SaveChangesAsync(ct);
         }
-
-        await _db.SaveChangesAsync(ct);
 
         await _realtime.MessagesRead(request.TaskId, userId, targetId, ct);
 

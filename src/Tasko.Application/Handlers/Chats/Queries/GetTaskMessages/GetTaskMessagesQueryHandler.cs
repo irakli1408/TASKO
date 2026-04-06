@@ -20,16 +20,24 @@ public sealed class GetTaskMessagesQueryHandler : IRequestHandler<GetTaskMessage
         var page = await _db.ChatMessages
             .AsNoTracking()
             .Where(x => x.TaskId == request.TaskId)
-            .OrderByDescending(x => x.CreatedAtUtc)
+            .Join(
+                _db.Users.AsNoTracking(),
+                message => message.SenderUserId,
+                user => user.Id,
+                (message, user) => new { message, user }
+            )
+            .OrderByDescending(x => x.message.CreatedAtUtc)
             .Skip(skip)
             .Take(take)
             .Select(x => new ChatMessageDto
             {
-                Id = x.Id,
-                TaskId = x.TaskId,
-                SenderUserId = x.SenderUserId,
-                Text = x.Text,
-                CreatedAtUtc = x.CreatedAtUtc
+                Id = x.message.Id,
+                TaskId = x.message.TaskId,
+                SenderUserId = x.message.SenderUserId,
+                SenderFirstName = x.user.FirstName,
+                SenderLastName = x.user.LastName,
+                Text = x.message.Text,
+                CreatedAtUtc = x.message.CreatedAtUtc
             })
             .ToListAsync(ct);
 

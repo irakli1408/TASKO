@@ -23,6 +23,7 @@ using Tasko.Application.Handlers.Tasks.Commands.UploadTaskImages;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskFeed;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskImages;
+using Tasko.Application.Handlers.Tasks.Queries.GetMyTasks;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
 using Tasko.Application.Handlers.Tasks.Queries.GetTaskStats;
 using Tasko.Application.Media;
@@ -182,6 +183,15 @@ public sealed class TasksController : ApiControllerBase
         [FromQuery] LocationType? locationType = null,
         CancellationToken ct = default)
         => Sender.Send(new GetTaskFeedQuery(skip, take, locationType), ct);
+
+    [HttpGet("mine")]
+    [Authorize]
+    [EnableRateLimiting("read")]
+    public Task<IReadOnlyList<TaskDto>> GetMine(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50,
+        CancellationToken ct = default)
+        => Sender.Send(new GetMyTasksQuery(skip, take), ct);
 
     public sealed class UploadImagesForm
     {

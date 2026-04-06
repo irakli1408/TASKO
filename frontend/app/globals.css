@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --tasko-bg: #f3f6fb;
+  --tasko-surface: #ffffff;
+  --tasko-border: #dfe7f3;
+  --tasko-primary: #2f6bff;
+  --tasko-primary-strong: #2457d6;
+  --tasko-text: #16233b;
+  --tasko-muted: #6f7f99;
+  --tasko-soft: #edf3ff;
+  --tasko-shadow: 0 18px 40px rgba(40, 76, 155, 0.08);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(47, 107, 255, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(250, 185, 65, 0.12), transparent 20%),
+    linear-gradient(180deg, #f8fbff 0%, var(--tasko-bg) 100%);
+  color: var(--tasko-text);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer components {
+  .tasko-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .tasko-topbar {
+    @apply rounded-[28px] border bg-white/95 backdrop-blur;
+    border-color: var(--tasko-border);
+    box-shadow: var(--tasko-shadow);
+  }
+
+  .tasko-card {
+    @apply rounded-[28px] border bg-white;
+    border-color: var(--tasko-border);
+    box-shadow: var(--tasko-shadow);
+  }
+
+  .tasko-soft-card {
+    @apply rounded-[24px] border;
+    border-color: #e7eef9;
+    background: #f8fbff;
+  }
+
+  .tasko-pill {
+    @apply inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold;
+    border-color: #d8e4fb;
+    color: var(--tasko-muted);
+    background: white;
+  }
+
+  .tasko-primary-btn {
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white transition;
+    background: var(--tasko-primary);
+  }
+
+  .tasko-primary-btn:hover {
+    background: var(--tasko-primary-strong);
+  }
+
+  .tasko-secondary-btn {
+    @apply inline-flex items-center justify-center rounded-full border bg-white px-5 py-3 text-sm font-semibold transition;
+    border-color: var(--tasko-border);
+    color: var(--tasko-text);
+  }
+
+  .tasko-secondary-btn:hover {
+    border-color: #c8d6ee;
+    background: #f8fbff;
+  }
+
+  .tasko-input {
+    @apply w-full rounded-2xl border bg-white px-4 py-3 outline-none transition;
+    border-color: var(--tasko-border);
+  }
+
+  .tasko-input:focus {
+    border-color: #8db0ff;
+    box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.08);
+  }
+
+  .tasko-label {
+    @apply text-sm font-medium;
+    color: #34425c;
+  }
+
+  .tasko-muted {
+    color: var(--tasko-muted);
+  }
+}

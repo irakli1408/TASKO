@@ -4,6 +4,7 @@ using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Services;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
+using Tasko.Domain.Entities.Accounts.Users;
 
 namespace Tasko.Application.Handlers.Tasks.Queries.GetTaskById;
 
@@ -34,7 +35,9 @@ public sealed class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, 
             .FirstOrDefaultAsync(x => x.Id == request.TaskId, ct)
             ?? throw new KeyNotFoundException("Task not found.");
 
-        // 2) access rules (same as chat)
+        // 2) access rules
+        // creator / assigned / executor with existing offer
+        // plus: active executor can preview published task details before sending an offer
         var isCreator = task.CreatedByUserId == userId;
         var isAssigned = task.AssignedToUserId == userId;
 
@@ -42,7 +45,19 @@ public sealed class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, 
             .AsNoTracking()
             .AnyAsync(x => x.TaskId == task.Id && x.ExecutorUserId == userId, ct);
 
-        if (!isCreator && !isAssigned && !hasOffer)
+        var canPreviewAsExecutor = false;
+
+        if (!isCreator && !isAssigned && !hasOffer && task.Status == Tasko.Domain.Entities.Tasks.TaskStatus.Published)
+        {
+            canPreviewAsExecutor = await _db.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == userId
+                               && u.IsActive
+                               && u.IsExecutorActive
+                               && (u.RoleType == UserRoleType.Executor || u.RoleType == UserRoleType.Both), ct);
+        }
+
+        if (!isCreator && !isAssigned && !hasOffer && !canPreviewAsExecutor)
             throw new UnauthorizedAccessException("Access denied.");
 
         // 3) track unique view (service already ignores owner)

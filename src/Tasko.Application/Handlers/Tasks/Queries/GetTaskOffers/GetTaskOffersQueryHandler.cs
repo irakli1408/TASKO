@@ -4,6 +4,7 @@ using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Services;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
+using Tasko.Domain.Entities.Accounts.Users;
 
 namespace Tasko.Application.Handlers.Tasks.Queries.GetTaskOffers;
 
@@ -34,14 +35,28 @@ public sealed class GetTaskOffersQueryHandler : IRequestHandler<GetTaskOffersQue
             ?? throw new KeyNotFoundException("Task not found.");
 
         // доступ: заказчик / назначенный мастер / мастер который делал offer
+        // плюс active executor может зайти на published task и получить только свой offer list (часто пустой)
         var hasOffer = await _db.Offers
             .AsNoTracking()
             .AnyAsync(x => x.TaskId == request.TaskId && x.ExecutorUserId == userId, ct);
 
+        var canPreviewAsExecutor = false;
+
+        if (task.CreatedByUserId != userId && task.AssignedToUserId != userId && !hasOffer && task.Status == Tasko.Domain.Entities.Tasks.TaskStatus.Published)
+        {
+            canPreviewAsExecutor = await _db.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == userId
+                               && u.IsActive
+                               && u.IsExecutorActive
+                               && (u.RoleType == UserRoleType.Executor || u.RoleType == UserRoleType.Both), ct);
+        }
+
         var canRead =
             task.CreatedByUserId == userId ||
             task.AssignedToUserId == userId ||
-            hasOffer;
+            hasOffer ||
+            canPreviewAsExecutor;
 
         if (!canRead) throw new UnauthorizedAccessException();
 
@@ -52,7 +67,7 @@ public sealed class GetTaskOffersQueryHandler : IRequestHandler<GetTaskOffersQue
             await _taskViewService.TrackTaskViewAsync(task.Id, userId, ct);
         }
 
-        // заказчик видит все offers, мастер — только свой (чтобы не видеть конкурентов)
+        // заказчик видит все offers, мастер — только свой (или пусто, если offer еще не создан)
         var q = _db.Offers.AsNoTracking().Where(x => x.TaskId == request.TaskId);
 
         if (task.CreatedByUserId != userId)

@@ -37,6 +37,10 @@ public sealed class SendTaskMessageCommandHandler : IRequestHandler<SendTaskMess
         if (string.IsNullOrWhiteSpace(text))
             throw new InvalidOperationException("Message text is empty.");
 
+        var sender = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId, ct)
+            ?? throw new KeyNotFoundException("User not found.");
+
         var task = await _db.Tasks.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == request.TaskId, ct)
             ?? throw new KeyNotFoundException("Task not found.");
@@ -58,6 +62,8 @@ public sealed class SendTaskMessageCommandHandler : IRequestHandler<SendTaskMess
             Id = msg.Id,
             TaskId = msg.TaskId,
             SenderUserId = msg.SenderUserId,
+            SenderFirstName = sender.FirstName,
+            SenderLastName = sender.LastName,
             Text = msg.Text,
             CreatedAtUtc = msg.CreatedAtUtc
         };
