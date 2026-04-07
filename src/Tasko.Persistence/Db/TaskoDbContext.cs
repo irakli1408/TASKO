@@ -4,9 +4,10 @@ using Tasko.Domain.Entities.Accounts.Users;
 using Tasko.Domain.Entities.Auth;
 using Tasko.Domain.Entities.Categories;
 using Tasko.Domain.Entities.Chats;
-using Tasko.Domain.Entities.Notifications;
-using Tasko.Domain.Entities.Tasks;
 using Tasko.Domain.Entities.Media;
+using Tasko.Domain.Entities.Notifications;
+using Tasko.Domain.Entities.Rating;
+using Tasko.Domain.Entities.Tasks;
 
 public sealed class TaskoDbContext : DbContext, ITaskoDbContext
 {
@@ -33,6 +34,8 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
 
 
     public DbSet<ExecutorLocation> ExecutorLocations => Set<ExecutorLocation>();
+
+    public DbSet<Review> Reviews => Set<Review>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
