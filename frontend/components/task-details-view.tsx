@@ -14,10 +14,12 @@ import {
   TaskDetails,
   TaskImage,
   TaskOffer,
+  TaskReview,
   TaskStats,
   assignOffer,
   cancelTask,
   completeTask,
+  createTaskReview,
   createOffer,
   getTaskDetails,
   getTaskImages,
@@ -47,6 +49,10 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const [assigningOfferId, setAssigningOfferId] = useState<number | null>(null);
   const [statusAction, setStatusAction] = useState<"start" | "complete" | "cancel" | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "offers" | "photos" | "stats">("overview");
+  const [reviewScore, setReviewScore] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [createdReview, setCreatedReview] = useState<TaskReview | null>(null);
 
   const isExecutorUser =
     user?.roleType === UserRoleType.Executor || user?.roleType === UserRoleType.Both;
@@ -70,7 +76,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       const [taskDetails, taskImages, taskOffers] = await Promise.all([
         getTaskDetails(token, taskId),
         getTaskImages(token, taskId).catch(() => []),
-        getTaskOffers(token, taskId).catch(() => [])
+        getTaskOffers(token, taskId)
       ]);
 
       setTask(taskDetails);
@@ -163,6 +169,12 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const taskStatus = task?.status ?? TASK_STATUS.DRAFT;
   const flowSteps = useMemo(() => getTaskFlowSteps(taskStatus, t), [taskStatus, t]);
   const flowSummary = useMemo(() => getTaskFlowSummary(taskStatus, t), [taskStatus, t]);
+  const canLeaveReview = Boolean(
+    isTaskCreator &&
+      task?.status === TASK_STATUS.COMPLETED &&
+      task.assignedToUserId &&
+      !createdReview
+  );
   const tabItems = useMemo(
     () => [
       { id: "overview" as const, label: t("task.tabOverview") },
@@ -176,7 +188,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   async function refreshTaskState(token: string, taskIdToLoad: number) {
     const [taskDetails, taskOffers, taskImages] = await Promise.all([
       getTaskDetails(token, taskIdToLoad),
-      getTaskOffers(token, taskIdToLoad).catch(() => []),
+      getTaskOffers(token, taskIdToLoad),
       getTaskImages(token, taskIdToLoad).catch(() => [])
     ]);
 
@@ -331,6 +343,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
       markTaskResponded(taskId);
       setOffers((current) => [created, ...current]);
+      setActiveTab("offers");
       setOfferPrice("");
       setOfferComment("");
       setSuccess(t("task.offerSentSuccess"));
@@ -338,6 +351,60 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       setError(getErrorMessage(offerError, t("task.offerError")));
     } finally {
       setSubmittingOffer(false);
+    }
+  }
+
+  async function handleCreateReview() {
+    if (!task || !canLeaveReview) {
+      return;
+    }
+
+    if (reviewScore < 1 || reviewScore > 5) {
+      setError(t("task.reviewInvalidScore"));
+      return;
+    }
+
+    setSubmittingReview(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const token = await getAccessToken();
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      const review = await createTaskReview(token, {
+        taskId: task.id,
+        score: reviewScore,
+        comment: reviewComment.trim() || null
+      });
+
+      setCreatedReview(review);
+      setReviewComment("");
+      setSuccess(t("task.reviewSuccess"));
+    } catch (reviewError) {
+      const message = getErrorMessage(reviewError, t("task.reviewError"));
+
+      if (message.toLowerCase().includes("already exists")) {
+        setCreatedReview({
+          id: 0,
+          taskId: task.id,
+          fromUserId: task.createdByUserId,
+          toUserId: task.assignedToUserId ?? 0,
+          score: reviewScore,
+          comment: reviewComment.trim() || null,
+          createdAtUtc: new Date().toISOString()
+        });
+        setSuccess(t("task.reviewAlreadyExists"));
+        return;
+      }
+
+      setError(message);
+    } finally {
+      setSubmittingReview(false);
     }
   }
 
@@ -586,7 +653,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                             <p className="text-sm font-semibold text-[var(--tasko-text)]">{t("task.currentResponses")}</p>
                             <p className="mt-2 text-sm leading-7 tasko-muted">
                               {offers.length > 0
-                                ? `${offers.length} ${t("task.offers").toLowerCase()} доступны для просмотра и следующих действий.`
+                                ? `${offers.length} ${t("task.offers").toLowerCase()} ${t("task.offersAvailableText")}`
                                 : t("task.noOffers")}
                             </p>
                           </div>
@@ -699,7 +766,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                   {t("task.quickActions")}
                 </p>
                 <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--tasko-text)]">
-                  Центр задачи
+                  {t("task.workspaceTitle")}
                 </h3>
 
                 <div className="mt-5 grid gap-3">
@@ -811,6 +878,94 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                     <QuickMetric label={t("task.accepted")} value={String(stats.acceptedOffersCount)} />
                     <QuickMetric label={t("task.viewsTracked")} value={String(stats.viewsCount)} />
                   </div>
+                </article>
+              ) : null}
+
+              {canLeaveReview || createdReview ? (
+                <article className="tasko-card p-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                    {t("task.reviewLabel")}
+                  </p>
+                  <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                    {createdReview ? t("task.reviewDoneTitle") : t("task.reviewTitle")}
+                  </h3>
+
+                  {createdReview ? (
+                    <div className="mt-5 grid gap-4">
+                      <div className="tasko-soft-card p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--tasko-text)]">
+                              {t("task.reviewForExecutor")}
+                            </p>
+                            <p className="mt-2 text-sm tasko-muted">
+                              {task.assignedToUserId
+                                ? formatParticipantName(
+                                    task.assignedToFirstName,
+                                    task.assignedToLastName,
+                                    task.assignedToUserId
+                                  )
+                                : t("task.notAssigned")}
+                            </p>
+                          </div>
+                          <div className="rounded-full bg-[#fff6dd] px-3 py-2 text-sm font-semibold text-[#b58109]">
+                            {renderStars(createdReview.score)}
+                          </div>
+                        </div>
+                        {createdReview.comment ? (
+                          <p className="mt-4 text-sm leading-7 tasko-muted">{createdReview.comment}</p>
+                        ) : (
+                          <p className="mt-4 text-sm leading-7 tasko-muted">{t("task.reviewNoComment")}</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-5 grid gap-4">
+                      <div className="tasko-soft-card p-5">
+                        <p className="text-sm leading-7 tasko-muted">{t("task.reviewText")}</p>
+
+                        <div className="mt-5">
+                          <span className="tasko-label">{t("task.reviewScore")}</span>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {[5, 4, 3, 2, 1].map((score) => (
+                              <button
+                                key={score}
+                                type="button"
+                                onClick={() => setReviewScore(score)}
+                                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                                  reviewScore === score
+                                    ? "bg-[#fff2cc] text-[#9a6a00] shadow-[0_12px_24px_rgba(245,158,11,0.18)]"
+                                    : "border border-[#dfe7f3] bg-white text-[#607392] hover:border-[#cbd8eb]"
+                                }`}
+                              >
+                                {renderStars(score)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <label className="mt-5 block space-y-2">
+                          <span className="tasko-label">{t("task.reviewComment")}</span>
+                          <textarea
+                            value={reviewComment}
+                            onChange={(event) => setReviewComment(event.target.value)}
+                            rows={4}
+                            className="tasko-input"
+                            placeholder={t("task.reviewCommentPlaceholder")}
+                          />
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => void handleCreateReview()}
+                          disabled={submittingReview}
+                          className="tasko-primary-btn mt-5 disabled:opacity-70"
+                        >
+                          {submittingReview ? t("task.reviewSending") : t("task.reviewSubmit")}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </article>
               ) : null}
 
@@ -987,6 +1142,10 @@ function OfferMeta({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-sm font-semibold text-[var(--tasko-text)]">{value}</p>
     </div>
   );
+}
+
+function renderStars(score: number) {
+  return "★".repeat(score) + "☆".repeat(Math.max(0, 5 - score));
 }
 
 function OfferCard({

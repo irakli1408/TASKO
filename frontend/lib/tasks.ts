@@ -90,6 +90,16 @@ export type ChatMessage = {
   createdAtUtc: string;
 };
 
+export type TaskReview = {
+  id: number;
+  taskId: number;
+  fromUserId: number;
+  toUserId: number;
+  score: number;
+  comment: string | null;
+  createdAtUtc: string;
+};
+
 export type UnreadCount = {
   count: number;
 };
@@ -261,6 +271,17 @@ export async function cancelTask(token: string, taskId: number) {
   return apiFetch<void>(`/Tasks/${taskId}/cancel`, {
     method: "POST",
     token
+  });
+}
+
+export async function createTaskReview(
+  token: string,
+  payload: { taskId: number; score: number; comment: string | null }
+) {
+  return apiFetch<TaskReview>("/Reviews", {
+    method: "POST",
+    token,
+    body: payload
   });
 }
 
