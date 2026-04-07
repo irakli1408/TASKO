@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+	<PropertyGroup>
+		<NuGetAudit>false</NuGetAudit>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);NU1902</WarningsNotAsErrors>
+		<NoWarn>$(NoWarn);NU1902</NoWarn>
+	</PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Tasko.Application\Tasko.Application.csproj" />
     <ProjectReference Include="..\Tasko.Domain\Tasko.Domain.csproj" />

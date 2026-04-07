@@ -70,7 +70,6 @@ namespace Tasko.API.Controllers.Auth
         }
 
         [HttpPost("change-password")]
-        [Authorize]
         [EnableRateLimiting("write")]
         public async Task<IActionResult> ChangePassword(
             [FromBody] ChangePasswordCommand command,
@@ -81,7 +80,6 @@ namespace Tasko.API.Controllers.Auth
         }
 
         [HttpPost("forgot")]
-        [Authorize]
         [EnableRateLimiting("write")]
         public async Task<IActionResult> Forgot([FromBody] ForgotRequest req, CancellationToken ct)
         {

@@ -16,4 +16,5 @@ public sealed class TaskFeedItemDto
     public LocationType LocationType { get; set; }
 
     public DateTime CreatedAtUtc { get; set; }
+    public DateTime? PublishedAtUtc { get; set; }
 }

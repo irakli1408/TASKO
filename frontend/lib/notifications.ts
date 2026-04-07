@@ -70,7 +70,7 @@ export function createNotificationsHubConnection(getAccessToken: () => Promise<s
       accessTokenFactory: async () => (await getAccessToken()) ?? ""
     })
     .withAutomaticReconnect()
-    .configureLogging(LogLevel.Error)
+    .configureLogging(LogLevel.None)
     .build();
 }
 

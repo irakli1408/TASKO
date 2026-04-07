@@ -39,6 +39,9 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
         if (task.Status != Tasko.Domain.Entities.Tasks.TaskStatus.Published)
             throw new InvalidOperationException("Task is not Published.");
 
+        if (task.CreatedByUserId == userId)
+            throw new InvalidOperationException("You cannot make an offer on your own task.");
+
         var exists = await _db.Offers.AnyAsync(x => x.TaskId == request.TaskId && x.ExecutorUserId == userId, ct);
         if (exists) throw new InvalidOperationException("You already made an offer for this task.");
 

@@ -1,8 +1,3 @@
 {
-  "/feed/page": "app/feed/page.js",
-  "/login/page": "app/login/page.js",
-  "/tasks/mine/page": "app/tasks/mine/page.js",
-  "/tasks/create/page": "app/tasks/create/page.js",
-  "/page": "app/page.js",
-  "/tasks/[taskId]/page": "app/tasks/[taskId]/page.js"
+  "/login/page": "app/login/page.js"
 }

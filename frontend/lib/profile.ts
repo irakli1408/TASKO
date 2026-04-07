@@ -38,6 +38,19 @@ export type ExecutorLocationsResponse = {
   locationTypes: LocationType[];
 };
 
+export type ExecutorPublicProfile = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  about: string | null;
+  ratingAverage: number;
+  ratingCount: number;
+  locationType: LocationType;
+  experienceYears: number | null;
+  categoryIds: number[];
+};
+
 export type UpdateProfilePayload = {
   firstName: string;
   lastName: string;
@@ -50,6 +63,10 @@ export async function getMyProfile(token: string) {
   return apiFetch<MyProfile>("/Profile/me", {
     token
   });
+}
+
+export async function getExecutorPublicProfile(executorId: number) {
+  return apiFetch<ExecutorPublicProfile>(`/Profile/${executorId}`);
 }
 
 export async function updateMyProfile(token: string, payload: UpdateProfilePayload) {

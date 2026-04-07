@@ -51,6 +51,15 @@ export type RegisterPayload = LoginPayload & {
   phone: string;
 };
 
+export type ForgotPasswordPayload = {
+  email: string;
+};
+
+export type ResetPasswordPayload = {
+  token: string;
+  newPassword: string;
+};
+
 const STORAGE_KEY = "tasko.auth";
 
 export function loadStoredTokens(): AuthTokens | null {
@@ -116,5 +125,19 @@ export async function logoutRequest(tokens: AuthTokens) {
 export async function meRequest(accessToken: string) {
   return apiFetch<CurrentUser>("/Auth/me", {
     token: accessToken
+  });
+}
+
+export async function forgotPasswordRequest(payload: ForgotPasswordPayload) {
+  return apiFetch<{ message: string }>("/Auth/forgot", {
+    method: "POST",
+    body: payload
+  });
+}
+
+export async function resetPasswordRequest(payload: ResetPasswordPayload) {
+  return apiFetch<{ message: string }>("/Auth/reset", {
+    method: "POST",
+    body: payload
   });
 }

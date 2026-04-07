@@ -309,7 +309,21 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
     }
   }, [messages]);
 
-  const canSend = useMemo(() => Boolean(draft.trim()) && !sending, [draft, sending]);
+  const hasChatPartner = useMemo(() => {
+    if (!taskDetails || !user) {
+      return false;
+    }
+
+    if (taskDetails.createdByUserId === user.id) {
+      return Boolean(taskDetails.assignedToUserId);
+    }
+
+    return true;
+  }, [taskDetails, user]);
+  const canSend = useMemo(
+    () => hasChatPartner && Boolean(draft.trim()) && !sending,
+    [draft, hasChatPartner, sending]
+  );
   const chatCompanion = useMemo(() => {
     if (!taskDetails || !user) {
       return null;
@@ -369,6 +383,10 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
   }
 
   function handleDraftChange(value: string) {
+    if (!hasChatPartner) {
+      return;
+    }
+
     setDraft(value);
 
     const connection = connectionRef.current;
@@ -392,6 +410,10 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
   }
 
   async function handleSend() {
+    if (!hasChatPartner) {
+      return;
+    }
+
     const messageText = draft.trim();
 
     if (!messageText) {
@@ -523,7 +545,21 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
               ref={messagesViewportRef}
               className="max-h-[58vh] min-h-[360px] space-y-4 overflow-y-auto bg-[linear-gradient(180deg,rgba(244,247,252,0.22)_0%,rgba(255,255,255,0)_100%)] p-6"
             >
-              {messages.length === 0 ? (
+              {!hasChatPartner ? (
+                <div className="tasko-soft-card rounded-[1.8rem] border border-[#dbe7f6] bg-[linear-gradient(180deg,#f9fbff_0%,#ffffff_100%)] p-6 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eef4ff] text-xl font-semibold text-[#2f6bff]">
+                    …
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-[var(--tasko-text)]">
+                    {chatCompanion?.name ?? t("chat.executorNotAssigned")}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 tasko-muted">
+                    {locale.startsWith("ru")
+                      ? "Чат станет доступен после назначения мастера. Пока можно дождаться отклика и выбрать исполнителя в деталях задачи."
+                      : "This chat becomes active after an executor is assigned. For now, wait for offers and choose a partner from the task details page."}
+                  </p>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="tasko-soft-card p-5 text-sm tasko-muted">
                   {t("chat.noMessages")}
                 </div>
@@ -590,14 +626,25 @@ export function TaskChatView({ taskId }: TaskChatViewProps) {
                   onChange={(event) => handleDraftChange(event.target.value)}
                   rows={4}
                   className="tasko-input"
-                  placeholder={t("chat.placeholder")}
+                  placeholder={
+                    hasChatPartner
+                      ? t("chat.placeholder")
+                      : locale.startsWith("ru")
+                        ? "Назначь мастера, чтобы открыть переписку по задаче."
+                        : "Assign an executor to unlock task chat."
+                  }
+                  disabled={!hasChatPartner}
                 />
               </label>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm tasko-muted">
-                    {t("chat.keepTaskSpecific")}
+                    {hasChatPartner
+                      ? t("chat.keepTaskSpecific")
+                      : locale.startsWith("ru")
+                        ? "После назначения мастера здесь появится рабочий чат по задаче."
+                        : "Once an executor is assigned, this area becomes the working chat for the task."}
                   </p>
                   {typingUsers.length > 0 ? (
                     <p className="text-sm font-medium text-[#2f6bff]">

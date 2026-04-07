@@ -29,6 +29,7 @@ public sealed class TaskPost
 
     public TaskStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public DateTime? PublishedAtUtc { get; private set; }
     public long CategoryId { get; private set; }
     public Category Category { get; private set; } = null!;
     public LocationType LocationType { get; private set; } = LocationType.AllCity;
@@ -47,7 +48,8 @@ public sealed class TaskPost
         if (Status != TaskStatus.Draft)
             throw new InvalidOperationException("Task is not in Draft.");
 
-        Status = TaskStatus.Published;
+        Status = TaskStatus.Published; 
+        PublishedAtUtc = DateTime.UtcNow;
     }
 
     public void UpdateDraft(string? title = null, string? description = null, decimal? budget = null)

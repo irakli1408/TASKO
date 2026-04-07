@@ -9,6 +9,7 @@ import { useI18n } from "@/components/i18n-provider";
 import { LocationType, UserRoleType } from "@/lib/auth";
 import { resolveAssetUrl } from "@/lib/api";
 import { getErrorMessage } from "@/lib/profile";
+import { markTaskResponded } from "@/lib/responded-tasks";
 import {
   TaskDetails,
   TaskImage,
@@ -328,6 +329,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
         comment: offerComment.trim() || null
       });
 
+      markTaskResponded(taskId);
       setOffers((current) => [created, ...current]);
       setOfferPrice("");
       setOfferComment("");
@@ -407,35 +409,70 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                         }
                       />
                     </div>
+
+                    <div className="mt-6 grid gap-3 rounded-[1.5rem] border border-white/14 bg-white/10 p-4 sm:grid-cols-3">
+                      <HeroInlineStat label={t("task.offers")} value={String(offers.length)} />
+                      <HeroInlineStat label={t("task.views")} value={String(task.viewsCount)} />
+                      <HeroInlineStat label={t("feed.published")} value={formatShortDate(task.createdAtUtc, locale, t)} />
+                    </div>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
-                    {images.length > 0
-                      ? images.slice(0, 4).map((image) => (
+                  {images.length > 0 ? (
+                    <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_132px] xl:grid-cols-[minmax(0,1fr)_132px]">
+                      <a
+                        href={resolveAssetUrl(images[0].url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="overflow-hidden rounded-[1.6rem] border border-[#dfe7f3] bg-[#eef3fb]"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={resolveAssetUrl(images[0].url)}
+                          alt={`Task image ${images[0].fileId}`}
+                          className="h-[292px] w-full object-cover"
+                        />
+                      </a>
+                      <div className="grid gap-4">
+                        {images.slice(1, 4).map((image) => (
                           <a
                             key={image.fileId}
                             href={resolveAssetUrl(image.url)}
                             target="_blank"
                             rel="noreferrer"
-                            className="overflow-hidden rounded-[1.6rem] border border-[#dfe7f3] bg-[#eef3fb]"
+                            className="overflow-hidden rounded-[1.25rem] border border-[#dfe7f3] bg-[#eef3fb]"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={resolveAssetUrl(image.url)}
                               alt={`Task image ${image.fileId}`}
-                              className="h-32 w-full object-cover sm:h-36"
+                              className="h-[87px] w-full object-cover"
                             />
                           </a>
-                        ))
-                      : Array.from({ length: 4 }).map((_, index) => (
-                          <div
-                            key={index}
-                            className="flex h-32 items-center justify-center rounded-[1.6rem] border border-dashed border-[#d7e2f3] bg-[#f7faff] text-center text-sm text-[#90a1bc] sm:h-36"
-                          >
-                            {t("task.photos")}
-                          </div>
                         ))}
-                  </div>
+                        {images.length < 4
+                          ? Array.from({ length: 4 - images.length }).map((_, index) => (
+                              <div
+                                key={`placeholder-${index}`}
+                                className="flex h-[87px] items-center justify-center rounded-[1.25rem] border border-dashed border-[#d7e2f3] bg-[#f7faff] text-center text-xs text-[#90a1bc]"
+                              >
+                                {t("task.photos")}
+                              </div>
+                            ))
+                          : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="flex h-32 items-center justify-center rounded-[1.6rem] border border-dashed border-[#d7e2f3] bg-[#f7faff] text-center text-sm text-[#90a1bc] sm:h-36"
+                        >
+                          {t("task.photos")}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </article>
 
@@ -457,14 +494,29 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                   ))}
                 </div>
 
-                <div className="mt-6 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="mt-6 grid gap-6">
                   {activeTab === "overview" ? (
                     <>
-                      <div className="tasko-soft-card p-5">
-                        <p className="text-sm font-semibold text-[var(--tasko-text)]">{t("task.aboutTask")}</p>
-                        <p className="mt-3 text-sm leading-8 tasko-muted">
-                          {task.description?.trim() || t("task.noDescription")}
-                        </p>
+                      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+                        <div className="tasko-soft-card p-5">
+                          <p className="text-sm font-semibold text-[var(--tasko-text)]">{t("task.aboutTask")}</p>
+                          <p className="mt-3 text-sm leading-8 tasko-muted">
+                            {task.description?.trim() || t("task.noDescription")}
+                          </p>
+                        </div>
+
+                        <div className="tasko-soft-card p-5">
+                          <p className="text-sm font-semibold text-[var(--tasko-text)]">{t("task.taskMetrics")}</p>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <QuickMetric
+                              label={t("feed.budget")}
+                              value={task.budget !== null ? formatBudget(task.budget, locale) : t("task.notSet")}
+                            />
+                            <QuickMetric label={t("task.views")} value={String(task.viewsCount)} />
+                            <QuickMetric label={t("task.status")} value={getStatusLabel(task.status, t)} />
+                            <QuickMetric label={t("feed.published")} value={formatDate(task.createdAtUtc, locale, t)} />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="tasko-soft-card p-5">
@@ -478,7 +530,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                           </span>
                         </div>
 
-                        <div className="mt-5 grid gap-3">
+                        <div className="mt-5 grid gap-3 xl:grid-cols-2">
                           {flowSteps.map((step, index) => (
                             <TaskFlowStep
                               key={step.label}
@@ -522,18 +574,45 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                             </button>
                           ) : null}
                         </div>
-
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                          <QuickMetric
-                            label={t("feed.budget")}
-                            value={task.budget !== null ? formatBudget(task.budget, locale) : t("task.notSet")}
-                          />
-                          <QuickMetric label={t("task.views")} value={String(task.viewsCount)} />
-                          <QuickMetric label={t("task.status")} value={getStatusLabel(task.status, t)} />
-                          <QuickMetric label={t("feed.published")} value={formatDate(task.createdAtUtc, locale, t)} />
-                        </div>
                       </div>
                     </>
+                  ) : null}
+
+                  {activeTab === "offers" ? (
+                    <div className="grid gap-5">
+                      <div className="tasko-soft-card p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--tasko-text)]">{t("task.currentResponses")}</p>
+                            <p className="mt-2 text-sm leading-7 tasko-muted">
+                              {offers.length > 0
+                                ? `${offers.length} ${t("task.offers").toLowerCase()} доступны для просмотра и следующих действий.`
+                                : t("task.noOffers")}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-[#eef4ff] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#2563eb]">
+                            {offers.length}
+                          </span>
+                        </div>
+                      </div>
+
+                      {offers.length > 0 ? (
+                        <div className="grid gap-4">
+                          {offers.map((offer) => (
+                            <OfferCard
+                              key={`tab-offer-${offer.id}`}
+                              offer={offer}
+                              isTaskCreator={isTaskCreator}
+                              isAssigned={Boolean(task.assignedToUserId)}
+                              assigningOfferId={assigningOfferId}
+                              locale={locale}
+                              onAssign={handleAssignOffer}
+                              t={t}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
 
                   {activeTab === "photos" ? (
@@ -617,31 +696,107 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
             <div className="grid gap-6 content-start">
               <article className={`tasko-card p-6 ${activeTab !== "offers" ? "lg:sticky lg:top-6" : ""}`}>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                  {t("task.offers")}
+                  {t("task.quickActions")}
                 </p>
                 <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--tasko-text)]">
-                  {t("task.currentResponses")}
+                  Центр задачи
                 </h3>
 
-                <div className="mt-5 space-y-4">
-                  {offers.length === 0 ? (
-                    <div className="tasko-soft-card p-4 text-sm tasko-muted">
-                      {t("task.noOffers")}
-                    </div>
-                  ) : (
-                    offers.map((offer) => (
-                      <OfferCard
-                        key={offer.id}
-                        offer={offer}
-                        isTaskCreator={isTaskCreator}
-                        isAssigned={Boolean(task.assignedToUserId)}
-                        assigningOfferId={assigningOfferId}
-                        locale={locale}
-                        onAssign={handleAssignOffer}
-                        t={t}
-                      />
-                    ))
-                  )}
+                <div className="mt-5 grid gap-3">
+                  <QuickMetric label={t("task.taskId")} value={`#${task.id}`} />
+                  <QuickMetric label={t("task.status")} value={getStatusLabel(task.status, t)} />
+                  <QuickMetric
+                    label={t("task.creator")}
+                    value={formatParticipantName(
+                      task.createdByFirstName,
+                      task.createdByLastName,
+                      task.createdByUserId
+                    )}
+                  />
+                  <QuickMetric
+                    label={t("task.assigned")}
+                    value={
+                      task.assignedToUserId
+                        ? formatParticipantName(
+                            task.assignedToFirstName,
+                            task.assignedToLastName,
+                            task.assignedToUserId
+                          )
+                        : t("task.notAssigned")
+                    }
+                  />
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link href="/feed" className="tasko-secondary-btn">
+                    {t("task.backToFeed")}
+                  </Link>
+                  {canOpenChat ? (
+                    <Link href={`/tasks/${task.id}/chat`} className="tasko-primary-btn">
+                      {t("task.openChat")}
+                    </Link>
+                  ) : null}
+                </div>
+
+                {(canStartTask || canCompleteTask || canCancelTask) ? (
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {canStartTask ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleStartTask()}
+                        disabled={statusAction !== null}
+                        className="tasko-primary-btn disabled:opacity-70"
+                      >
+                        {statusAction === "start" ? t("task.flowStart") : t("task.flowStartAction")}
+                      </button>
+                    ) : null}
+                    {canCompleteTask ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleCompleteTask()}
+                        disabled={statusAction !== null}
+                        className="tasko-primary-btn disabled:opacity-70"
+                      >
+                        {statusAction === "complete" ? t("task.flowComplete") : t("task.flowCompleteAction")}
+                      </button>
+                    ) : null}
+                    {canCancelTask ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleCancelTask()}
+                        disabled={statusAction !== null}
+                        className="tasko-secondary-btn border-red-200 text-red-700 disabled:opacity-70"
+                      >
+                        {statusAction === "cancel" ? t("task.flowCancel") : t("task.flowCancelAction")}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="mt-6 border-t border-[var(--tasko-border)] pt-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                    {t("task.offers")}
+                  </p>
+                  <div className="mt-4 space-y-4">
+                    {offers.length === 0 ? (
+                      <div className="tasko-soft-card p-4 text-sm tasko-muted">
+                        {t("task.noOffers")}
+                      </div>
+                    ) : (
+                      offers.slice(0, 2).map((offer) => (
+                        <OfferCard
+                          key={offer.id}
+                          offer={offer}
+                          isTaskCreator={isTaskCreator}
+                          isAssigned={Boolean(task.assignedToUserId)}
+                          assigningOfferId={assigningOfferId}
+                          locale={locale}
+                          onAssign={handleAssignOffer}
+                          t={t}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
               </article>
 
@@ -706,16 +861,6 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                   <p className="text-sm leading-7 tasko-muted">
                     {t("task.nextActionsText")}
                   </p>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <Link href="/feed" className="tasko-secondary-btn">
-                      {t("task.backToFeed")}
-                    </Link>
-                    {canOpenChat ? (
-                      <Link href={`/tasks/${task.id}/chat`} className="tasko-primary-btn">
-                        {t("task.openChat")}
-                      </Link>
-                    ) : null}
-                  </div>
                 </article>
               )}
             </div>
@@ -739,6 +884,15 @@ function HeroMetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[1.25rem] border border-white/16 bg-white/10 px-4 py-3 backdrop-blur-sm">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-white">{value}</p>
+    </div>
+  );
+}
+
+function HeroInlineStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65">{label}</p>
       <p className="mt-2 text-sm font-semibold text-white">{value}</p>
     </div>
   );
@@ -908,26 +1062,33 @@ function OfferCard({
         />
       </div>
 
-      {isTaskCreator ? (
-        <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex flex-wrap justify-end gap-3">
+        <Link
+          href={`/executors/${offer.executorUserId}`}
+          className="tasko-secondary-btn w-full justify-center sm:w-auto"
+        >
+          {t("executorProfile.openProfile")}
+        </Link>
+
+        {isTaskCreator ? (
           <button
             type="button"
             onClick={() => void onAssign(offer.id)}
             disabled={
               assigningOfferId !== null || isAssigned || offer.status.toLowerCase() === "accepted"
             }
-            className="rounded-full bg-[#dff5e5] px-5 py-2.5 text-sm font-semibold text-[#23915d] transition hover:bg-[#d2f0dc] disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full rounded-full bg-[#dff5e5] px-5 py-2.5 text-sm font-semibold text-[#23915d] transition hover:bg-[#d2f0dc] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {assigningOfferId === offer.id
               ? t("task.assigning")
-              : isAssigned
-                ? offer.status.toLowerCase() === "accepted"
-                  ? t("task.assignedDone")
-                  : t("task.alreadyAssigned")
-                : t("task.assignExecutor")}
+                : isAssigned
+                  ? offer.status.toLowerCase() === "accepted"
+                    ? t("task.assignedDone")
+                    : t("task.alreadyAssigned")
+                  : t("task.assignExecutor")}
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -953,6 +1114,19 @@ function formatDate(value: string, locale: string, t: (key: string) => string) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
+  }).format(date);
+}
+
+function formatShortDate(value: string, locale: string, t: (key: string) => string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return t("profile.unknown");
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric"
   }).format(date);
 }
 

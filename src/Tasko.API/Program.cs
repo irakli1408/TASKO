@@ -75,7 +75,6 @@ builder.Host.UseSerilog((ctx, services, lc) =>
 // -----------------------------
 builder.Services.AddControllers();
 
-// ✅ Mute-flow presence (должен быть Singleton)
 builder.Services.AddSingleton<IChatPresence, InMemoryChatPresence>();
 
 builder.Services.AddScoped<ITaskRealtime, SignalRTaskRealtime>();
@@ -109,7 +108,6 @@ builder.Services.Configure<PasswordResetOptions>(builder.Configuration.GetSectio
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IPasswordResetTokenService, PasswordResetTokenService>();
 
-// ✅ нужен для ResetPasswordCommandHandler (IPasswordHashService)
 builder.Services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
 
 // -----------------------------
@@ -135,7 +133,6 @@ builder.Services.AddApiVersioning(o =>
     o.SubstituteApiVersionInUrl = true;
 });
 
-// 💯 фикс твоей ошибки "apiVersion could not be resolved"
 builder.Services.Configure<RouteOptions>(o =>
 {
     o.ConstraintMap["apiVersion"] = typeof(ApiVersionRouteConstraint);
@@ -156,7 +153,7 @@ builder.Services.AddRateLimiter(options =>
             token);
     };
 
-    // AUTH (login/refresh) — по IP жестче
+    // AUTH (login/refresh) 
     options.AddPolicy("auth", ctx =>
     {
         var ip = GetUserOrIpKey.GetClientIp(ctx);
@@ -170,7 +167,7 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 
-    // READ (feed/get) — мягче
+    // READ (feed/get) 
     options.AddPolicy("read", ctx =>
     {
         var key = GetUserOrIpKey.UserOrIpKey(ctx);
@@ -186,7 +183,7 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 
-    // WRITE (offers/messages/assign/status change) — умеренно
+    // WRITE (offers/messages/assign/status change) 
     options.AddPolicy("write", ctx =>
     {
         var key = GetUserOrIpKey.UserOrIpKey(ctx);
@@ -201,7 +198,7 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 
-    // UPLOAD — отдельно (дороже)
+    // UPLOAD 
     options.AddPolicy("upload", ctx =>
     {
         var key = GetUserOrIpKey.UserOrIpKey(ctx);
@@ -215,7 +212,7 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 
-    // HUB negotiate/handshake (HTTP часть)
+    // HUB negotiate/handshake (HTTP)
     options.AddPolicy("hub", ctx =>
     {
         var key = GetUserOrIpKey.UserOrIpKey(ctx);
@@ -273,7 +270,6 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    // ✅ фикс конфликтов имён типов (особенно nested record’ы в контроллерах)
     c.CustomSchemaIds(t => t.FullName!.Replace("+", "."));
 
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tasko API", Version = "v1" });
@@ -377,7 +373,6 @@ builder.Services
             RoleClaimType = ClaimTypes.Role
         };
 
-        // ✅ токен для SignalR приходит через query string "access_token"
         o.Events = new JwtBearerEvents
         {
             OnMessageReceived = ctx =>
@@ -440,7 +435,7 @@ app.UseSerilogRequestLogging(o =>
         if (status >= 500) return LogEventLevel.Error;
         if (status >= 400) return LogEventLevel.Warning;
 
-        return LogEventLevel.Verbose; // не попадёт (MinimumLevel.Warning)
+        return LogEventLevel.Verbose; 
     };
 });
 
@@ -450,7 +445,7 @@ var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOpt
 app.UseRequestLocalization(locOptions.Value);
 
 //
-// ✅ Enrich logs: TraceId/UserId/Path (в колонки AdditionalColumns)
+// ✅ Enrich logs: TraceId/UserId/Path (AdditionalColumns)
 //
 app.Use(async (ctx, next) =>
 {
@@ -470,14 +465,14 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("SignalRCors");
 
-// ✅ Auth ДО RateLimiter/OutputCache (чтобы key был по userId)
+// ✅ Auth ДО RateLimiter/OutputCache (userId)
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ RateLimiter ДО OutputCache (чтобы кэш не обходил лимиты)
+// ✅ RateLimiter ДО OutputCache 
 app.UseRateLimiter();
 
-// ✅ Подготовка заголовка для OutputCache vary-by-user (замена SetVaryByValue)
+// ✅ Подготовка заголовка для OutputCache vary-by-user (SetVaryByValue)
 app.Use(async (ctx, next) =>
 {
     var uid = ctx.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -494,7 +489,7 @@ app.UseOutputCache();
 // Map REST controllers
 app.MapControllers();
 
-// Map SignalR hubs (HTTP handshake/negotiate лимитируем политикой "hub")
+// Map SignalR hubs (HTTP handshake/negotiate  "hub")
 app.MapHub<TaskHub>("/hubs/tasks").RequireRateLimiting("hub");
 app.MapHub<NotificationsHub>("/hubs/notifications").RequireRateLimiting("hub");
 

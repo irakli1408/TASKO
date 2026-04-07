@@ -78,7 +78,8 @@ public sealed class GetTaskFeedQueryHandler
                     Budget = task.Budget,
                     CategoryId = task.CategoryId,
                     LocationType = task.LocationType,
-                    CreatedAtUtc = task.CreatedAtUtc
+                    CreatedAtUtc = task.CreatedAtUtc,
+                    PublishedAtUtc = task.PublishedAtUtc
                 })
             .ToListAsync(ct);
 

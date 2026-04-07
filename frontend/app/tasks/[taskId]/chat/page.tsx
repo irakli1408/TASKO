@@ -1,4 +1,4 @@
-import { TaskChatView } from "@/components/task-chat-view";
+import { TaskChatViewV2 } from "@/components/task-chat-view-v2";
 
 type TaskChatPageProps = {
   params: Promise<{ taskId: string }>;
@@ -12,5 +12,5 @@ export default async function TaskChatPage({ params }: TaskChatPageProps) {
     return null;
   }
 
-  return <TaskChatView taskId={taskId} />;
+  return <TaskChatViewV2 taskId={taskId} />;
 }

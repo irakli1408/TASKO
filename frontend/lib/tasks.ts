@@ -12,6 +12,7 @@ export type TaskFeedItem = {
   categoryId: number;
   locationType: LocationType;
   createdAtUtc: string;
+  publishedAtUtc?: string | null;
 };
 
 export type TaskRecord = {

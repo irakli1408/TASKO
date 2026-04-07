@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,7 +35,6 @@ function getFriendlyError(error: unknown, t: (key: string) => string) {
     if (error.status === 401) return t("auth.incorrectCredentials");
     if (error.status === 409) return t("auth.emailExists");
     if (error.status === 400) return error.message || t("auth.checkFields");
-
     return error.message;
   }
 
@@ -96,59 +95,22 @@ export function AuthCard({ mode }: AuthCardProps) {
   }
 
   return (
-    <main className="tasko-shell flex min-h-screen items-center py-8">
-      <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="tasko-card overflow-hidden p-0">
-          <div className="border-b px-6 py-4" style={{ borderColor: "var(--tasko-border)" }}>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#F7F8FA_0%,#EFF6FF_100%)] px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[760px] items-center justify-center">
+        <section className="w-full rounded-[28px] border border-[var(--tasko-border)] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.10)] sm:p-9">
+          <div className="flex flex-col items-center text-center">
             <LogoLink compact />
-          </div>
-          <div className="grid gap-8 bg-gradient-to-br from-[#f7faff] via-white to-[#fff8ed] p-8 sm:p-10">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#8ba0c3]">
-                {t("auth.access")}
-              </p>
-              <h1 className="mt-4 max-w-md text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                {isRegister ? t("auth.registerTitle") : t("auth.loginTitle")}
-              </h1>
-              <p className="mt-5 max-w-lg text-base leading-7 tasko-muted">
-                {isRegister
-                  ? t("auth.registerText")
-                  : t("auth.loginText")}
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                t("auth.safeLogin"),
-                t("auth.profileSync"),
-                t("auth.roleRedirect")
-              ].map((item) => (
-                <div key={item} className="tasko-soft-card px-4 py-5">
-                  <p className="text-sm font-semibold text-[#35507f]">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="tasko-card p-6 sm:p-8">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#8ba0c3]">
-                {isRegister ? t("auth.register") : t("auth.login")}
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-                {isRegister ? t("auth.createAccountTitle") : t("auth.signInTitle")}
-              </h2>
-            </div>
-            <Link href="/" className="tasko-secondary-btn px-4 py-2">
-              {t("auth.home")}
-            </Link>
+            <h1 className="mt-5 text-[2.1rem] font-semibold tracking-tight text-[var(--tasko-text)]">
+              {isRegister ? t("auth.register") : t("auth.login")}
+            </h1>
+            <p className="mt-3 max-w-xl text-base leading-7 text-[var(--tasko-muted)]">
+              {isRegister ? t("auth.registerText") : t("auth.loginText")}
+            </p>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             {isRegister ? (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <label className="space-y-2">
                   <span className="tasko-label">{t("auth.firstName")}</span>
                   <input
@@ -206,7 +168,17 @@ export function AuthCard({ mode }: AuthCardProps) {
             ) : null}
 
             <label className="block space-y-2">
-              <span className="tasko-label">{t("auth.password")}</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="tasko-label">{t("auth.password")}</span>
+                {!isRegister ? (
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm font-semibold text-[var(--tasko-primary)] transition hover:text-[var(--tasko-primary-strong)]"
+                  >
+                    {t("auth.forgotPassword")}
+                  </Link>
+                ) : null}
+              </div>
               <input
                 type="password"
                 value={form.password}
@@ -220,7 +192,7 @@ export function AuthCard({ mode }: AuthCardProps) {
             </label>
 
             {error ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-[16px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             ) : null}
@@ -228,25 +200,25 @@ export function AuthCard({ mode }: AuthCardProps) {
             <button
               type="submit"
               disabled={submitting || status === "loading"}
-              className="tasko-primary-btn w-full disabled:cursor-not-allowed disabled:opacity-70"
+              className={`w-full rounded-[14px] px-4 py-3.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                isRegister
+                  ? "bg-[#22C55E] hover:bg-[#16A34A]"
+                  : "bg-[var(--tasko-primary)] hover:bg-[var(--tasko-primary-strong)]"
+              }`}
             >
-              {submitting
-                ? t("auth.wait")
-                : isRegister
-                  ? t("auth.createAccount")
-                  : t("auth.logIn")}
+              {submitting ? t("auth.wait") : isRegister ? t("auth.register") : t("auth.logIn")}
             </button>
           </form>
 
-          <p className="mt-6 text-sm tasko-muted">
-            {isRegister ? t("auth.alreadyHaveAccount") : t("auth.needAccount")}{" "}
+          <div className="mt-7 border-t border-[var(--tasko-border)] pt-5 text-center text-sm text-[var(--tasko-muted)]">
+            {isRegister ? `${t("auth.alreadyHaveAccount")} ` : `${t("auth.needAccount")} `}
             <Link
               href={isRegister ? "/login" : "/register"}
-              className="font-semibold text-[#2f6bff]"
+              className="font-semibold text-[var(--tasko-primary)]"
             >
               {isRegister ? t("auth.logInHere") : t("auth.registerHere")}
             </Link>
-          </p>
+          </div>
         </section>
       </div>
     </main>

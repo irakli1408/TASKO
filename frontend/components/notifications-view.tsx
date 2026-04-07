@@ -154,7 +154,7 @@ export function NotificationsView() {
     >
       <div className="grid gap-6 xl:grid-cols-[0.72fr_0.28fr]">
         <section className="tasko-card p-0 overflow-hidden">
-          <div className="border-b border-[var(--tasko-border)] bg-gradient-to-r from-[#f7faff] via-white to-[#fff8ec] p-6">
+          <div className="border-b border-[var(--tasko-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
@@ -233,44 +233,52 @@ export function NotificationsView() {
                     {group.items.map((item) => (
                       <article
                         key={item.id}
-                        className={`rounded-[1.8rem] border p-5 transition ${
+                        className={`rounded-[1.8rem] border p-5 shadow-[0_18px_45px_rgba(47,83,151,0.06)] transition ${
                           item.isRead
                             ? "border-[var(--tasko-border)] bg-white"
                             : "border-[#d8e5ff] bg-[#f6f9ff]"
                         }`}
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div className="flex gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xs font-semibold uppercase tracking-[0.14em] text-[#35507f] shadow-[0_10px_30px_rgba(44,77,145,0.08)]">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="flex min-w-0 gap-4">
+                            <div
+                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xs font-semibold uppercase tracking-[0.14em] shadow-[0_10px_30px_rgba(44,77,145,0.08)] ${getNotificationAccentClasses(item.type)}`}
+                            >
                               {getNotificationTypeShortLabel(item.type)}
                             </div>
-                            <div className="space-y-2">
+                            <div className="min-w-0 space-y-3">
                               <div className="flex flex-wrap items-center gap-3">
                                 <p className="text-base font-semibold text-[var(--tasko-text)]">
                                   {item.title}
                                 </p>
-                                {!item.isRead ? (
-                                  <span className="rounded-full bg-[#2f6bff] px-3 py-1 text-xs font-semibold text-white">
-                                    {t("notifications.new")}
-                                  </span>
-                                ) : null}
-                              </div>
-                              <p className="text-sm leading-7 tasko-muted">{item.body}</p>
-                              <div className="flex flex-wrap items-center gap-3">
-                                <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#2f6bff]">
+                                <span
+                                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${getNotificationBadgeClasses(item.type)}`}
+                                >
                                   {getNotificationTypeLabelText(item.type, t)}
                                 </span>
-                                <span className="text-xs uppercase tracking-[0.18em] text-[#8ba0c3]">
+                                {!item.isRead ? (
+                                  <span className="rounded-full bg-[var(--tasko-primary)] px-3 py-1 text-xs font-semibold text-white">
+                                    {t("notifications.new")}
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-[#f4f7fc] px-3 py-1 text-xs font-medium text-[#7b8daa]">
+                                    {t("notifications.read")}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="max-w-3xl text-sm leading-7 tasko-muted">{item.body}</p>
+                              <div className="flex flex-wrap items-center gap-3 text-xs">
+                                <span className="uppercase tracking-[0.18em] text-[#8ba0c3]">
                                   {formatDate(item.createdAtUtc, locale, t)}
                                 </span>
-                                <span className="text-xs font-medium text-[#59729e]">
+                                <span className="rounded-full bg-[#f2f6fd] px-3 py-1 font-medium text-[#59729e]">
                                   {getNotificationContextText(item, t)}
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-3">
+                          <div className="flex shrink-0 flex-wrap gap-3 lg:justify-end">
                             <Link href={getNotificationHref(item)} className="tasko-secondary-btn">
                               {t("notifications.open")}
                             </Link>
@@ -320,6 +328,28 @@ export function NotificationsView() {
               {t("notifications.whatArrivesText")}
             </p>
           </div>
+
+          <div className="tasko-card bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+              {t("notifications.quickActions")}
+            </p>
+            <div className="mt-4 grid gap-3">
+              <Link href="/feed" className="tasko-secondary-btn justify-center">
+                {t("notifications.openFeed")}
+              </Link>
+              <Link href="/settings" className="tasko-secondary-btn justify-center">
+                {t("common.settings")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => void handleReadAll()}
+                disabled={readingAll || unreadCount === 0}
+                className="tasko-primary-btn justify-center disabled:opacity-70"
+              >
+                {readingAll ? t("notifications.updating") : t("notifications.readAll")}
+              </button>
+            </div>
+          </div>
         </aside>
       </div>
     </GuardedPage>
@@ -328,11 +358,29 @@ export function NotificationsView() {
 
 function NotificationStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-[#f4f7fc] px-4 py-3">
+    <div className="rounded-[1.3rem] border border-[#e7eef9] bg-[#f4f7fc] px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-[var(--tasko-text)]">{value}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--tasko-text)]">{value}</p>
     </div>
   );
+}
+
+function getNotificationAccentClasses(type: NotificationType) {
+  if (type === NotificationType.OfferCreated) return "bg-[#eef4ff] text-[#2563EB]";
+  if (type === NotificationType.OfferAccepted) return "bg-[#ecfdf3] text-[#16A34A]";
+  if (type === NotificationType.TaskAssigned) return "bg-[#fff7ed] text-[#EA580C]";
+  if (type === NotificationType.MessageSent) return "bg-[#f5f3ff] text-[#7C3AED]";
+  if (type === NotificationType.TaskPublished) return "bg-[#eefbf6] text-[#0F9F6E]";
+  return "bg-[#f4f7fc] text-[#59729e]";
+}
+
+function getNotificationBadgeClasses(type: NotificationType) {
+  if (type === NotificationType.OfferCreated) return "bg-[#EEF4FF] text-[#2563EB]";
+  if (type === NotificationType.OfferAccepted) return "bg-[#ECFDF3] text-[#16A34A]";
+  if (type === NotificationType.TaskAssigned) return "bg-[#FFF7ED] text-[#EA580C]";
+  if (type === NotificationType.MessageSent) return "bg-[#F5F3FF] text-[#7C3AED]";
+  if (type === NotificationType.TaskPublished) return "bg-[#EEFBF6] text-[#0F9F6E]";
+  return "bg-[#f4f7fc] text-[#59729e]";
 }
 
 function getNotificationEmoji(type: NotificationType) {

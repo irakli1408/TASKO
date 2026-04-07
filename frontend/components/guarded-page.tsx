@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { CurrentUser } from "@/lib/auth";
 import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoLink } from "@/components/logo-link";
 import { NotificationsNavLink } from "@/components/notifications-nav-link";
 import { NotificationsToastLayer } from "@/components/notifications-toast-layer";
@@ -58,8 +57,57 @@ export function GuardedPage({
       <header className="tasko-topbar mb-6 p-4 sm:p-5">
         <div className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <LogoLink compact />
+            <div className="flex items-center gap-1">
+              <div className="scale-[0.8] origin-left">
+                <LogoLink compact />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[1rem] font-semibold tracking-tight text-[var(--tasko-text)] sm:text-[1.4rem]">
+                  Tasko
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden min-w-0 max-w-full lg:flex lg:flex-1 lg:justify-end">
+              <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto pb-1">
+              <Link href="/feed" className="tasko-secondary-btn shrink-0 px-3 py-2">
+                {t("common.feed")}
+              </Link>
+              <Link href="/tasks/create" className="tasko-secondary-btn shrink-0 px-3 py-2">
+                {t("common.createTask")}
+              </Link>
+              <Link href="/tasks/mine" className="tasko-secondary-btn shrink-0 px-3 py-2">
+                {t("common.myTasks")}
+              </Link>
+              <Link href="/offers/mine" className="tasko-secondary-btn shrink-0 px-3 py-2">
+                {t("common.myOffers")}
+              </Link>
+              <Link href="/jobs/mine" className="tasko-secondary-btn shrink-0 px-3 py-2">
+                {t("common.myJobs")}
+              </Link>
+              <NotificationsNavLink />
+              <Link href="/profile" className="tasko-secondary-btn px-4 py-2">
+                {t("common.profile")}
+              </Link>
+              <Link
+                href="/settings"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#cdeedd] bg-[#f0fdf4] text-[#16a34a] transition hover:border-[#b7e5cb] hover:bg-[#dcfce7] hover:text-[#15803d]"
+                aria-label={t("common.settings")}
+                title={t("common.settings")}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.9]">
+                  <path d="M10.3 3.2h3.4l.5 2.1a7.3 7.3 0 0 1 1.6.7l1.9-1.1 2.4 2.4-1.1 1.9c.3.5.6 1 .7 1.6l2.1.5v3.4l-2.1.5a7.3 7.3 0 0 1-.7 1.6l1.1 1.9-2.4 2.4-1.9-1.1c-.5.3-1 .6-1.6.7l-.5 2.1h-3.4l-.5-2.1a7.3 7.3 0 0 1-1.6-.7l-1.9 1.1-2.4-2.4 1.1-1.9a7.3 7.3 0 0 1-.7-1.6l-2.1-.5v-3.4l2.1-.5c.1-.6.4-1.1.7-1.6L3.9 7.3l2.4-2.4 1.9 1.1c.5-.3 1-.6 1.6-.7l.5-2.1Z" />
+                  <circle cx="12" cy="12" r="3.2" />
+                </svg>
+              </Link>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="shrink-0 rounded-[12px] bg-[#3B82F6] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(59,130,246,0.28)] transition hover:bg-[#2563eb]"
+              >
+                {t("common.logout")}
+              </button>
+              </div>
             </div>
 
             <button
@@ -77,36 +125,6 @@ export function GuardedPage({
             </button>
           </div>
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight">{title}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 tasko-muted">{description}</p>
-            </div>
-
-            <div className="hidden flex-wrap gap-3 lg:flex">
-              <LanguageSwitcher />
-              <Link href="/feed" className="tasko-secondary-btn px-4 py-2">
-                {t("common.feed")}
-              </Link>
-              <Link href="/tasks/create" className="tasko-secondary-btn px-4 py-2">
-                {t("common.createTask")}
-              </Link>
-              <Link href="/tasks/mine" className="tasko-secondary-btn px-4 py-2">
-                {t("common.myTasks")}
-              </Link>
-              <NotificationsNavLink />
-              <Link href="/profile" className="tasko-secondary-btn px-4 py-2">
-                {t("common.profile")}
-              </Link>
-              <button
-                type="button"
-                onClick={() => void logout()}
-                className="tasko-primary-btn px-4 py-2"
-              >
-                {t("common.logout")}
-              </button>
-            </div>
-          </div>
         </div>
 
         <div
@@ -115,9 +133,16 @@ export function GuardedPage({
           }`}
         >
           <div className="rounded-[2rem] border border-[#dfe7f3] bg-white p-4 shadow-[0_22px_44px_rgba(42,78,148,0.12)]">
-            <div className="flex flex-col gap-3">
-              <LanguageSwitcher />
+            <div className="mb-4 flex items-center gap-1 border-b border-[#eef3fb] pb-4 sm:hidden">
+              <div className="scale-[0.8] origin-left">
+                <LogoLink compact />
+              </div>
+              <div>
+                <p className="text-[0.95rem] font-semibold tracking-tight text-[var(--tasko-text)]">Tasko</p>
+              </div>
+            </div>
 
+            <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <Link href="/feed" className="tasko-secondary-btn px-4 py-2 text-center">
                   {t("common.feed")}
@@ -128,9 +153,21 @@ export function GuardedPage({
                 <Link href="/tasks/mine" className="tasko-secondary-btn px-4 py-2 text-center">
                   {t("common.myTasks")}
                 </Link>
+                <Link href="/offers/mine" className="tasko-secondary-btn px-4 py-2 text-center">
+                  {t("common.myOffers")}
+                </Link>
+                <Link href="/jobs/mine" className="tasko-secondary-btn px-4 py-2 text-center">
+                  {t("common.myJobs")}
+                </Link>
                 <NotificationsNavLink />
                 <Link href="/profile" className="tasko-secondary-btn px-4 py-2 text-center">
                   {t("common.profile")}
+                </Link>
+                <Link
+                  href="/settings"
+                  className="tasko-secondary-btn px-4 py-2 text-center"
+                >
+                  {t("common.settings")}
                 </Link>
                 <button
                   type="button"
@@ -153,7 +190,10 @@ export function GuardedPage({
           <p className="mt-3 max-w-2xl text-sm leading-7 text-amber-900/80">
             {t("guarded.executorBlockedText")}
           </p>
-          <Link href="/profile" className="mt-5 inline-flex rounded-full bg-amber-600 px-4 py-3 text-sm font-semibold text-white">
+          <Link
+            href="/profile"
+            className="mt-5 inline-flex rounded-full bg-amber-600 px-4 py-3 text-sm font-semibold text-white"
+          >
             {t("common.goToProfile")}
           </Link>
         </section>

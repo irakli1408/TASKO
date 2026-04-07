@@ -167,6 +167,31 @@ export function CreateTaskView() {
     [categoryTree, selectedRootCategoryId]
   );
   const selectedLeafCategoryId = Number(form.categoryId);
+  const currentStep = useMemo(() => {
+    const hasCategory = Boolean(form.categoryId.trim());
+    const hasTitle = Boolean(form.title.trim());
+    const hasDescription = Boolean(form.description.trim());
+    const hasBudget = Boolean(form.budget.trim()) && !Number.isNaN(parsedBudget);
+    const hasImages = uploadedImages.length > 0;
+
+    if (!hasCategory) {
+      return 1;
+    }
+
+    if (!hasTitle || !hasDescription) {
+      return 2;
+    }
+
+    if (!hasBudget) {
+      return 3;
+    }
+
+    if (!hasImages) {
+      return 4;
+    }
+
+    return 5;
+  }, [form.budget, form.categoryId, form.description, form.title, parsedBudget, uploadedImages.length]);
 
   async function handleSaveDraft() {
     if (!isValidDraft) {
@@ -320,15 +345,31 @@ export function CreateTaskView() {
         <section className="tasko-card p-5 sm:p-6 lg:p-7">
           <div className="flex flex-col gap-6">
             <div className="grid gap-3 sm:grid-cols-4">
-              <StepPill index={1} active label={t("createTask.category")} />
-              <StepPill index={2} label={t("createTask.descriptionLabel")} />
-              <StepPill index={3} label={t("feed.budget")} />
-              <StepPill index={4} label={t("createTask.images")} />
+              <StepPill index={1} active={currentStep === 1} completed={currentStep > 1} label={t("createTask.category")} />
+              <StepPill
+                index={2}
+                active={currentStep === 2}
+                completed={currentStep > 2}
+                label={t("createTask.descriptionLabel")}
+              />
+              <StepPill index={3} active={currentStep === 3} completed={currentStep > 3} label={t("feed.budget")} />
+              <StepPill
+                index={4}
+                active={currentStep === 4}
+                completed={currentStep > 4}
+                label={t("createTask.images")}
+              />
             </div>
 
             <div>
               <h2 className="text-3xl font-semibold tracking-tight text-[var(--tasko-text)]">
-                {t("createTask.category")}
+                {currentStep === 1
+                  ? t("createTask.category")
+                  : currentStep === 2
+                    ? t("createTask.descriptionLabel")
+                    : currentStep === 3
+                      ? t("feed.budget")
+                      : t("createTask.images")}
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-7 tasko-muted">
                 {t("createTask.flowTitle")}
@@ -687,25 +728,35 @@ export function CreateTaskView() {
 function StepPill({
   index,
   label,
-  active = false
+  active = false,
+  completed = false
 }: {
   index: number;
   label: string;
   active?: boolean;
+  completed?: boolean;
 }) {
   return (
     <div
       className={`rounded-[20px] border px-4 py-4 ${
-        active ? "border-[#cfe7ff] bg-[#f5fbff]" : "border-[#e5edf8] bg-white"
+        active
+          ? "border-[#cfe7ff] bg-[#f5fbff]"
+          : completed
+            ? "border-[#d8f3e7] bg-[#f2fdf7]"
+            : "border-[#e5edf8] bg-white"
       }`}
     >
       <div className="flex items-center gap-3">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-            active ? "bg-[#2f6bff] text-white" : "bg-[#edf3ff] text-[#315294]"
+            active
+              ? "bg-[#2f6bff] text-white"
+              : completed
+                ? "bg-[#22C55E] text-white"
+                : "bg-[#edf3ff] text-[#315294]"
           }`}
         >
-          {index}
+          {completed ? "✓" : index}
         </div>
         <div>
           <p className="text-sm font-semibold text-[var(--tasko-text)]">{label}</p>

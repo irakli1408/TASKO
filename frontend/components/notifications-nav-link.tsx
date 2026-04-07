@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
-import { useI18n } from "@/components/i18n-provider";
 import {
   createNotificationsHubConnection,
   getNotificationsUnreadCount
@@ -11,7 +10,6 @@ import {
 
 export function NotificationsNavLink() {
   const { status, getAccessToken } = useAuth();
-  const { t } = useI18n();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -21,6 +19,8 @@ export function NotificationsNavLink() {
     }
 
     let isCancelled = false;
+    const connection = createNotificationsHubConnection(getAccessToken);
+    const startPromise = connection.start().catch(() => undefined);
 
     async function bootstrap() {
       const token = await getAccessToken();
@@ -38,8 +38,6 @@ export function NotificationsNavLink() {
 
     void bootstrap();
 
-    const connection = createNotificationsHubConnection(getAccessToken);
-
     connection.on("notifications.unreadCount", (payload: { count: number }) => {
       setCount(payload.count ?? 0);
     });
@@ -56,19 +54,35 @@ export function NotificationsNavLink() {
       setCount(0);
     });
 
-    void connection.start().catch(() => undefined);
-
     return () => {
       isCancelled = true;
-      void connection.stop().catch(() => undefined);
+      void startPromise.finally(() => {
+        void connection.stop().catch(() => undefined);
+      });
     };
   }, [getAccessToken, status]);
 
   return (
-    <Link href="/notifications" className="tasko-secondary-btn relative px-4 py-2">
-      {t("common.notifications")}
+    <Link
+      href="/notifications"
+      aria-label="Notifications"
+      className="relative inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--tasko-border)] bg-white text-[#56657d] transition hover:border-[#cbd5e1] hover:bg-[#f8fafc]"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-[16px] w-[16px]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+        <path d="M10 17a2 2 0 0 0 4 0" />
+      </svg>
       {count > 0 ? (
-        <span className="ml-2 inline-flex min-w-6 items-center justify-center rounded-full bg-[#2f6bff] px-2 py-0.5 text-xs font-semibold text-white">
+        <span className="absolute right-0.5 top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#22C55E] px-1 text-[9px] font-semibold leading-none text-white shadow-[0_8px_18px_rgba(34,197,94,0.26)]">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}

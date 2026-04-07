@@ -32,6 +32,7 @@ export function NotificationsToastLayer() {
     }
 
     const connection = createNotificationsHubConnection(getAccessToken);
+    const startPromise = connection.start().catch(() => undefined);
 
     connection.on("notification.created", (incoming: NotificationItem) => {
       const toastKey = `${incoming.id}-${Date.now()}`;
@@ -46,10 +47,10 @@ export function NotificationsToastLayer() {
       timeoutMapRef.current.set(toastKey, timeoutId);
     });
 
-    void connection.start().catch(() => undefined);
-
     return () => {
-      void connection.stop().catch(() => undefined);
+      void startPromise.finally(() => {
+        void connection.stop().catch(() => undefined);
+      });
       clearAllTimeouts(timeoutMapRef.current);
     };
   }, [getAccessToken, status]);

@@ -172,6 +172,22 @@ export function ProfileSettings() {
     return t("profile.customerAccount");
   }, [canBeExecutor, profile, t]);
 
+  const executorStatusClass = useMemo(() => {
+    if (!profile) {
+      return "bg-[#EEF4FF] text-[#315294]";
+    }
+
+    if (profile.isExecutorActive) {
+      return "bg-[#EEF9F0] text-[#23915D]";
+    }
+
+    if (canBeExecutor) {
+      return "bg-[#FFF7E8] text-[#D48A12]";
+    }
+
+    return "bg-[#EEF4FF] text-[#315294]";
+  }, [canBeExecutor, profile]);
+
   const personalDirty = useMemo(() => {
     if (!profile) {
       return false;
@@ -481,7 +497,7 @@ export function ProfileSettings() {
                       className="h-16 w-16 rounded-full object-cover ring-4 ring-[#eef4ff]"
                     />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2f6bff] text-2xl font-semibold text-white">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F1FF] text-2xl font-semibold text-[#2563EB]">
                       {profile.firstName.charAt(0)}
                     </div>
                   )}
@@ -492,16 +508,16 @@ export function ProfileSettings() {
                     <p className="text-sm tasko-muted">{profile.email}</p>
                   </div>
                 </div>
-                <div className="rounded-full bg-[#eef4ff] px-4 py-2 text-sm font-semibold text-[#315294]">
+                <div className={`rounded-full px-4 py-2 text-sm font-semibold ${executorStatusClass}`}>
                   {executorStatusText}
                 </div>
               </div>
 
               <div className="mb-5 flex flex-wrap gap-3 text-sm">
-                <span className="rounded-full bg-[#f4f7fc] px-3 py-2 font-medium text-[#607392]">
+                <span className="rounded-full border border-[var(--tasko-border)] bg-[var(--tasko-soft)] px-3 py-2 font-medium text-[#607392]">
                   {t("profile.role")}: {getRoleLabel(profile.roleType, t)}
                 </span>
-                <span className="rounded-full bg-[#f4f7fc] px-3 py-2 font-medium text-[#607392]">
+                <span className="rounded-full border border-[var(--tasko-border)] bg-[var(--tasko-soft)] px-3 py-2 font-medium text-[#607392]">
                   {t("profile.created")}: {formatDate(profile.createdAtUtc, locale, t)}
                 </span>
               </div>
@@ -542,7 +558,7 @@ export function ProfileSettings() {
 
                 <label className="space-y-2">
                   <span className="tasko-label">{t("profile.avatarFromComputer")}</span>
-                  <label className="flex min-h-[56px] cursor-pointer items-center justify-between rounded-[1.2rem] border border-dashed border-[#cdd9ee] bg-[#f8fbff] px-4 py-3 text-sm text-[#607392] transition hover:border-[#2f6bff] hover:bg-[#f4f8ff]">
+                  <label className="flex min-h-[56px] cursor-pointer items-center justify-between rounded-[1.2rem] border border-dashed border-[#cdd9ee] bg-[#f8fbff] px-4 py-3 text-sm text-[#607392] transition hover:border-[var(--tasko-primary)] hover:bg-[#f4f8ff]">
                     <span className="truncate pr-3">
                       {uploadingAvatar
                         ? t("profile.uploadingAvatar")
