@@ -157,33 +157,33 @@ export function FeedView() {
     <GuardedPage title={t("feed.title")} description={t("feed.description")} requireExecutor>
       <section className="grid gap-6">
         <section className="tasko-card overflow-hidden p-0">
-          <div className="border-b border-[var(--tasko-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_100%)] px-5 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="border-b border-[var(--tasko-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_100%)] px-5 py-4 sm:px-6 sm:py-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8BA0C3]">
                   Лента заказов
                 </p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                <h2 className="mt-2 text-[2rem] font-semibold tracking-tight text-[var(--tasko-text)] sm:text-[2.35rem]">
                   {stats.total} задач доступно в вашей зоне
                 </h2>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => void loadFeed(selectedLocation, true)}
                   disabled={refreshing}
-                  className="tasko-primary-btn disabled:opacity-70"
+                  className="tasko-primary-btn px-5 py-3 disabled:opacity-70"
                 >
                   {refreshing ? t("feed.refreshing") : t("feed.refresh")}
                 </button>
-                <Link href="/profile" className="tasko-secondary-btn">
+                <Link href="/profile" className="tasko-secondary-btn px-5 py-3">
                   {t("feed.updateSettings")}
                 </Link>
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
-              <div className="tasko-input flex min-h-[50px] items-center px-4 text-sm text-[var(--tasko-muted)]">
+            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_150px]">
+              <div className="tasko-input flex min-h-[46px] items-center px-4 text-sm text-[var(--tasko-muted)]">
                 <input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
@@ -198,7 +198,7 @@ export function FeedView() {
                     event.target.value ? (Number(event.target.value) as LocationType) : null
                   )
                 }
-                className="tasko-input min-h-[50px]"
+                className="tasko-input min-h-[46px]"
               >
                 {locationOptions.map((option) => (
                   <option key={String(option.value)} value={option.value ?? ""}>
@@ -206,7 +206,7 @@ export function FeedView() {
                   </option>
                 ))}
               </select>
-              <div className="flex min-h-[50px] items-center justify-center rounded-[12px] border border-[var(--tasko-border)] bg-white px-4 text-sm font-semibold text-[var(--tasko-text)]">
+              <div className="flex min-h-[46px] items-center justify-center rounded-[12px] border border-[var(--tasko-border)] bg-white px-4 text-sm font-semibold text-[var(--tasko-text)]">
                 {stats.visibleBudgetCount} с бюджетом
               </div>
             </div>
@@ -324,7 +324,7 @@ export function FeedView() {
               ) : null}
 
               {loading ? (
-                <section className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <article key={index} className="tasko-card overflow-hidden p-0">
                       <div className="h-44 animate-pulse bg-slate-200" />
@@ -394,26 +394,25 @@ function TaskCard({
 
   return (
     <article className="tasko-card overflow-hidden p-0">
-      <div className={`relative h-52 ${visual.bannerClass} p-5 text-white`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_32%)]" />
+      <div className={`relative h-44 ${visual.bannerClass} p-4 text-white`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_34%)]" />
         <div className="relative flex items-start justify-between gap-3">
-          <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/90 backdrop-blur-sm">
+          <span className="rounded-full bg-white/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/92 backdrop-blur-sm">
             {categoryName}
           </span>
-          <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
+          <span className="rounded-full bg-white/12 px-3 py-1 text-[10px] font-semibold text-white/92 backdrop-blur-sm">
             {locationLabel}
           </span>
         </div>
-        <div className="relative mt-8 max-w-[240px]">
-          <p className="text-[1.55rem] font-semibold leading-tight">{task.title}</p>
+        <div className="relative mt-5 max-w-[240px]">
+          <p className="text-[1.45rem] font-semibold leading-tight">{task.title}</p>
         </div>
-        <div className="relative mt-6 flex items-center gap-2 text-[11px] font-medium text-white/85">
-          <span className="rounded-full bg-white/12 px-2.5 py-1">Task #{task.id}</span>
+        <div className="relative mt-3 flex items-center gap-2 text-[11px] font-medium text-white/85">
           {responded ? <span className="rounded-full bg-[#dcfce7] px-2.5 py-1 text-[#166534]">Отклик уже отправлен</span> : null}
         </div>
       </div>
 
-      <div className="p-5">
+      <div className="p-4">
         <div className="flex items-center gap-3 text-xs text-[var(--tasko-muted)]">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-sm font-semibold text-[#2563eb]">
             {getInitials(task.createdByFirstName, task.createdByLastName)}
@@ -426,34 +425,43 @@ function TaskCard({
           </div>
         </div>
 
-        <p className="mt-4 min-h-[84px] text-sm leading-7 text-[var(--tasko-muted)]">
+        <p className="mt-3 min-h-[56px] text-sm leading-6 text-[var(--tasko-muted)]">
           {task.description?.trim() ||
             "Исполнитель увидит описание задачи, бюджет и сможет отправить свое предложение."}
         </p>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 rounded-[18px] bg-[#f8fbff] p-3">
-          <div className="rounded-[14px] bg-white px-3 py-3">
+        {task.preferredTime?.trim() ? (
+          <div className="mt-3 inline-flex rounded-full border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-3 py-1.5 text-xs font-semibold text-[#315294]">
+            {t("task.preferredTime")}: {task.preferredTime}
+          </div>
+        ) : null}
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-[18px] bg-[#f8fbff] p-3">
+          <div className="rounded-[14px] bg-white px-3 py-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8BA0C3]">Бюджет</p>
             <p className="mt-1 text-xl font-semibold text-[var(--tasko-text)]">
               {task.budget !== null ? formatBudget(task.budget, locale) : "Не указан"}
             </p>
           </div>
-          <div className="rounded-[14px] bg-white px-3 py-3">
+          <div className="rounded-[14px] bg-white px-3 py-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8BA0C3]">Статус</p>
             <p className="mt-1 text-sm font-semibold text-[var(--tasko-text)]">Опубликовано</p>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-          <Link href={`/tasks/${task.id}`} className="tasko-secondary-btn">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <Link
+            href={`/tasks/${task.id}`}
+            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-[#d9e4f5] bg-[#fbfdff] px-4 text-center text-[13px] font-semibold text-[#17325c] transition hover:border-[#bfd4f4] hover:bg-[#f4f8ff]"
+          >
             Открыть детали
           </Link>
           <Link
             href={`/tasks/${task.id}`}
-            className={`rounded-[12px] px-4 py-2 text-sm font-semibold transition ${
+            className={`inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full px-4 text-center text-[13px] font-semibold transition ${
               responded
                 ? "border border-[#cdeedd] bg-[#eef9f0] text-[#23915d] hover:bg-[#e6f6ea]"
-                : "bg-[#22C55E] text-white hover:bg-[#16A34A]"
+                : "bg-[linear-gradient(180deg,#34d399_0%,#22c55e_100%)] text-white shadow-[0_10px_20px_rgba(34,197,94,0.16)] hover:brightness-[0.98]"
             }`}
           >
             {responded ? t("feed.responded") : t("feed.respond")}
@@ -466,7 +474,7 @@ function TaskCard({
 
 function getTaskVisual(index: number) {
   const variants = [
-    "bg-[linear-gradient(135deg,#60A5FA_0%,#3B82F6_100%)]",
+    "bg-[linear-gradient(135deg,rgba(96,165,250,0.92)_0%,rgba(59,130,246,0.82)_48%,rgba(37,99,235,0.92)_100%)]",
     "bg-[linear-gradient(135deg,#34D399_0%,#10B981_100%)]",
     "bg-[linear-gradient(135deg,#A78BFA_0%,#8B5CF6_100%)]",
     "bg-[linear-gradient(135deg,#F59E0B_0%,#FB7185_100%)]"

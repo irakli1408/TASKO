@@ -53,6 +53,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [createdReview, setCreatedReview] = useState<TaskReview | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const isExecutorUser =
     user?.roleType === UserRoleType.Executor || user?.roleType === UserRoleType.Both;
@@ -174,6 +175,9 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       task?.status === TASK_STATUS.COMPLETED &&
       task.assignedToUserId &&
       !createdReview
+  );
+  const canOpenReviewFlow = Boolean(
+    isTaskCreator && task?.status === TASK_STATUS.COMPLETED && task.assignedToUserId
   );
   const tabItems = useMemo(
     () => [
@@ -384,6 +388,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
 
       setCreatedReview(review);
       setReviewComment("");
+      setReviewModalOpen(false);
       setSuccess(t("task.reviewSuccess"));
     } catch (reviewError) {
       const message = getErrorMessage(reviewError, t("task.reviewError"));
@@ -398,6 +403,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
           comment: reviewComment.trim() || null,
           createdAtUtc: new Date().toISOString()
         });
+        setReviewModalOpen(false);
         setSuccess(t("task.reviewAlreadyExists"));
         return;
       }
@@ -431,15 +437,13 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
             </div>
           ) : null}
 
-          <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+          <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="grid gap-6">
               <article className="tasko-card p-4 sm:p-5 lg:p-6">
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_340px]">
-                  <div className="rounded-[2rem] bg-gradient-to-br from-[#2569f6] via-[#2f74ff] to-[#1f56cf] p-5 text-white shadow-[0_24px_54px_rgba(37,105,246,0.24)] sm:p-6">
+                <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.05fr)_320px]">
+                  <div className="rounded-[2rem] bg-[linear-gradient(135deg,rgba(29,78,216,0.9)_0%,rgba(37,99,235,0.84)_46%,rgba(30,64,175,0.9)_100%)] p-5 text-white shadow-[0_24px_50px_rgba(37,99,235,0.16)] sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="rounded-full bg-white/14 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
-                        {`Task #${task.id}`}
-                      </div>
+                      <div />
                       <span className="rounded-full bg-white/16 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white">
                         {getStatusLabel(task.status, t)}
                       </span>
@@ -453,6 +457,10 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                       <HeroMetaItem
                         label={t("feed.budget")}
                         value={task.budget !== null ? formatBudget(task.budget, locale) : t("task.notSet")}
+                      />
+                      <HeroMetaItem
+                        label={t("task.preferredTime")}
+                        value={task.preferredTime?.trim() || t("task.notSet")}
                       />
                       <HeroMetaItem label={t("task.status")} value={getStatusLabel(task.status, t)} />
                       <HeroMetaItem
@@ -485,48 +493,38 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                   </div>
 
                   {images.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_132px] xl:grid-cols-[minmax(0,1fr)_132px]">
-                      <a
-                        href={resolveAssetUrl(images[0].url)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="overflow-hidden rounded-[1.6rem] border border-[#dfe7f3] bg-[#eef3fb]"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={resolveAssetUrl(images[0].url)}
-                          alt={`Task image ${images[0].fileId}`}
-                          className="h-[292px] w-full object-cover"
-                        />
-                      </a>
-                      <div className="grid gap-4">
-                        {images.slice(1, 4).map((image) => (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {Array.from({ length: 4 }).map((_, index) => {
+                        const image = images[index];
+
+                        if (!image) {
+                          return (
+                            <div
+                              key={`placeholder-${index}`}
+                              className="flex min-h-[170px] items-center justify-center rounded-[1.5rem] border border-dashed border-[#d7e2f3] bg-[#f7faff] text-center text-xs text-[#90a1bc]"
+                            >
+                              {t("task.photos")}
+                            </div>
+                          );
+                        }
+
+                        return (
                           <a
                             key={image.fileId}
                             href={resolveAssetUrl(image.url)}
                             target="_blank"
                             rel="noreferrer"
-                            className="overflow-hidden rounded-[1.25rem] border border-[#dfe7f3] bg-[#eef3fb]"
+                            className="relative min-h-[170px] overflow-hidden rounded-[1.5rem] border border-[#dfe7f3] bg-[#eef3fb]"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={resolveAssetUrl(image.url)}
                               alt={`Task image ${image.fileId}`}
-                              className="h-[87px] w-full object-cover"
+                              className="absolute inset-0 h-full w-full object-cover"
                             />
                           </a>
-                        ))}
-                        {images.length < 4
-                          ? Array.from({ length: 4 - images.length }).map((_, index) => (
-                              <div
-                                key={`placeholder-${index}`}
-                                className="flex h-[87px] items-center justify-center rounded-[1.25rem] border border-dashed border-[#d7e2f3] bg-[#f7faff] text-center text-xs text-[#90a1bc]"
-                              >
-                                {t("task.photos")}
-                              </div>
-                            ))
-                          : null}
-                      </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
@@ -564,7 +562,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 <div className="mt-6 grid gap-6">
                   {activeTab === "overview" ? (
                     <>
-                      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+                      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(260px,0.82fr)]">
                         <div className="tasko-soft-card p-5">
                           <p className="text-sm font-semibold text-[var(--tasko-text)]">{t("task.aboutTask")}</p>
                           <p className="mt-3 text-sm leading-8 tasko-muted">
@@ -578,6 +576,10 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                             <QuickMetric
                               label={t("feed.budget")}
                               value={task.budget !== null ? formatBudget(task.budget, locale) : t("task.notSet")}
+                            />
+                            <QuickMetric
+                              label={t("task.preferredTime")}
+                              value={task.preferredTime?.trim() || t("task.notSet")}
                             />
                             <QuickMetric label={t("task.views")} value={String(task.viewsCount)} />
                             <QuickMetric label={t("task.status")} value={getStatusLabel(task.status, t)} />
@@ -761,7 +763,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
             </div>
 
             <div className="grid gap-6 content-start">
-              <article className={`tasko-card p-6 ${activeTab !== "offers" ? "lg:sticky lg:top-6" : ""}`}>
+              <article className="tasko-card self-start p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                   {t("task.quickActions")}
                 </p>
@@ -770,7 +772,6 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                 </h3>
 
                 <div className="mt-5 grid gap-3">
-                  <QuickMetric label={t("task.taskId")} value={`#${task.id}`} />
                   <QuickMetric label={t("task.status")} value={getStatusLabel(task.status, t)} />
                   <QuickMetric
                     label={t("task.creator")}
@@ -794,15 +795,17 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                   />
                 </div>
 
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href="/feed" className="tasko-secondary-btn">
-                    {t("task.backToFeed")}
-                  </Link>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {canOpenChat ? (
-                    <Link href={`/tasks/${task.id}/chat`} className="tasko-primary-btn">
+                    <Link href={`/tasks/${task.id}/chat`} className="tasko-primary-btn w-full">
                       {t("task.openChat")}
                     </Link>
-                  ) : null}
+                  ) : (
+                    <div className="hidden sm:block" />
+                  )}
+                  <Link href="/feed" className="tasko-secondary-btn w-full justify-center">
+                    {t("task.backToFeed")}
+                  </Link>
                 </div>
 
                 {(canStartTask || canCompleteTask || canCancelTask) ? (
@@ -837,6 +840,40 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                         {statusAction === "cancel" ? t("task.flowCancel") : t("task.flowCancelAction")}
                       </button>
                     ) : null}
+                  </div>
+                ) : null}
+
+                {canOpenReviewFlow ? (
+                  <div className="mt-4">
+                    {createdReview ? (
+                      <div className="tasko-soft-card p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--tasko-text)]">
+                              {t("task.reviewDoneTitle")}
+                            </p>
+                            <p className="mt-2 text-sm tasko-muted">
+                              {renderStars(createdReview.score)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setReviewModalOpen(true)}
+                            className="tasko-secondary-btn"
+                          >
+                            {t("task.reviewOpen")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setReviewModalOpen(true)}
+                        className="tasko-secondary-btn w-full justify-center border-[#cfe0ff] bg-[#f8fbff] text-[#2563eb] hover:bg-[#eef4ff]"
+                      >
+                        {t("task.reviewOpen")}
+                      </button>
+                    )}
                   </div>
                 ) : null}
 
@@ -878,94 +915,6 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
                     <QuickMetric label={t("task.accepted")} value={String(stats.acceptedOffersCount)} />
                     <QuickMetric label={t("task.viewsTracked")} value={String(stats.viewsCount)} />
                   </div>
-                </article>
-              ) : null}
-
-              {canLeaveReview || createdReview ? (
-                <article className="tasko-card p-6">
-                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                    {t("task.reviewLabel")}
-                  </p>
-                  <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--tasko-text)]">
-                    {createdReview ? t("task.reviewDoneTitle") : t("task.reviewTitle")}
-                  </h3>
-
-                  {createdReview ? (
-                    <div className="mt-5 grid gap-4">
-                      <div className="tasko-soft-card p-5">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--tasko-text)]">
-                              {t("task.reviewForExecutor")}
-                            </p>
-                            <p className="mt-2 text-sm tasko-muted">
-                              {task.assignedToUserId
-                                ? formatParticipantName(
-                                    task.assignedToFirstName,
-                                    task.assignedToLastName,
-                                    task.assignedToUserId
-                                  )
-                                : t("task.notAssigned")}
-                            </p>
-                          </div>
-                          <div className="rounded-full bg-[#fff6dd] px-3 py-2 text-sm font-semibold text-[#b58109]">
-                            {renderStars(createdReview.score)}
-                          </div>
-                        </div>
-                        {createdReview.comment ? (
-                          <p className="mt-4 text-sm leading-7 tasko-muted">{createdReview.comment}</p>
-                        ) : (
-                          <p className="mt-4 text-sm leading-7 tasko-muted">{t("task.reviewNoComment")}</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-5 grid gap-4">
-                      <div className="tasko-soft-card p-5">
-                        <p className="text-sm leading-7 tasko-muted">{t("task.reviewText")}</p>
-
-                        <div className="mt-5">
-                          <span className="tasko-label">{t("task.reviewScore")}</span>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {[5, 4, 3, 2, 1].map((score) => (
-                              <button
-                                key={score}
-                                type="button"
-                                onClick={() => setReviewScore(score)}
-                                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                                  reviewScore === score
-                                    ? "bg-[#fff2cc] text-[#9a6a00] shadow-[0_12px_24px_rgba(245,158,11,0.18)]"
-                                    : "border border-[#dfe7f3] bg-white text-[#607392] hover:border-[#cbd8eb]"
-                                }`}
-                              >
-                                {renderStars(score)}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <label className="mt-5 block space-y-2">
-                          <span className="tasko-label">{t("task.reviewComment")}</span>
-                          <textarea
-                            value={reviewComment}
-                            onChange={(event) => setReviewComment(event.target.value)}
-                            rows={4}
-                            className="tasko-input"
-                            placeholder={t("task.reviewCommentPlaceholder")}
-                          />
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => void handleCreateReview()}
-                          disabled={submittingReview}
-                          className="tasko-primary-btn mt-5 disabled:opacity-70"
-                        >
-                          {submittingReview ? t("task.reviewSending") : t("task.reviewSubmit")}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </article>
               ) : null}
 
@@ -1020,6 +969,115 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
               )}
             </div>
           </section>
+
+          {reviewModalOpen && canOpenReviewFlow ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.42)] px-4 py-8 backdrop-blur-[2px]">
+              <div className="tasko-card w-full max-w-[640px] p-6 sm:p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                      {t("task.reviewLabel")}
+                    </p>
+                    <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                      {createdReview ? t("task.reviewDoneTitle") : t("task.reviewTitle")}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 tasko-muted">
+                      {createdReview ? t("task.reviewSavedText") : t("task.reviewText")}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setReviewModalOpen(false)}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-[#dfe7f3] bg-white text-lg text-[#607392] transition hover:border-[#cbd8eb]"
+                    aria-label={t("task.closeReview")}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="mt-6 tasko-soft-card p-5">
+                  <p className="text-sm font-semibold text-[var(--tasko-text)]">
+                    {t("task.reviewForExecutor")}
+                  </p>
+                  <p className="mt-2 text-sm tasko-muted">
+                    {task.assignedToUserId
+                      ? formatParticipantName(
+                          task.assignedToFirstName,
+                          task.assignedToLastName,
+                          task.assignedToUserId
+                        )
+                      : t("task.notAssigned")}
+                  </p>
+
+                  {createdReview ? (
+                    <>
+                      <div className="mt-5 inline-flex rounded-full bg-[#fff6dd] px-4 py-2 text-sm font-semibold text-[#b58109]">
+                        {renderStars(createdReview.score)}
+                      </div>
+                      <p className="mt-4 text-sm leading-7 tasko-muted">
+                        {createdReview.comment || t("task.reviewNoComment")}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mt-5">
+                        <span className="tasko-label">{t("task.reviewScore")}</span>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {[5, 4, 3, 2, 1].map((score) => (
+                            <button
+                              key={score}
+                              type="button"
+                              onClick={() => setReviewScore(score)}
+                              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                                reviewScore === score
+                                  ? "bg-[#fff2cc] text-[#9a6a00] shadow-[0_12px_24px_rgba(245,158,11,0.18)]"
+                                  : "border border-[#dfe7f3] bg-white text-[#607392] hover:border-[#cbd8eb]"
+                              }`}
+                            >
+                              {renderStars(score)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <label className="mt-5 block space-y-2">
+                        <span className="tasko-label">{t("task.reviewComment")}</span>
+                        <textarea
+                          value={reviewComment}
+                          onChange={(event) => setReviewComment(event.target.value)}
+                          rows={5}
+                          className="tasko-input"
+                          placeholder={t("task.reviewCommentPlaceholder")}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setReviewModalOpen(false)}
+                    className="tasko-secondary-btn"
+                  >
+                    {t("task.reviewCancel")}
+                  </button>
+
+                  {!createdReview ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateReview()}
+                      disabled={submittingReview}
+                      className="tasko-primary-btn disabled:opacity-70"
+                    >
+                      {submittingReview ? t("task.reviewSending") : t("task.reviewSubmit")}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </GuardedPage>
@@ -1038,7 +1096,7 @@ function MetaPill({ label, value }: { label: string; value: string }) {
 function HeroMetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[1.25rem] border border-white/16 bg-white/10 px-4 py-3 backdrop-blur-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/74">{label}</p>
       <p className="mt-2 text-sm font-semibold text-white">{value}</p>
     </div>
   );
@@ -1221,10 +1279,10 @@ function OfferCard({
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap justify-end gap-3">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
         <Link
           href={`/executors/${offer.executorUserId}`}
-          className="tasko-secondary-btn w-full justify-center sm:w-auto"
+          className="tasko-secondary-btn w-full justify-center"
         >
           {t("executorProfile.openProfile")}
         </Link>
@@ -1236,7 +1294,7 @@ function OfferCard({
             disabled={
               assigningOfferId !== null || isAssigned || offer.status.toLowerCase() === "accepted"
             }
-            className="w-full rounded-full bg-[#dff5e5] px-5 py-2.5 text-sm font-semibold text-[#23915d] transition hover:bg-[#d2f0dc] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            className="w-full rounded-full bg-[#dff5e5] px-5 py-2.5 text-sm font-semibold text-[#23915d] transition hover:bg-[#d2f0dc] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {assigningOfferId === offer.id
               ? t("task.assigning")

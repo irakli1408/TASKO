@@ -123,26 +123,61 @@ export function LandingShellV3() {
               </span>
             </div>
 
-            <div className="hidden flex-1 items-center justify-center gap-8 text-sm font-medium text-[var(--tasko-muted)] lg:flex">
-              <Link href="/feed" className="transition hover:text-[var(--tasko-text)]">
-                Найти работу
-              </Link>
-              <Link href="/tasks/create" className="transition hover:text-[var(--tasko-text)]">
-                Разместить задачу
-              </Link>
+            <div className="hidden flex-1 items-center justify-end gap-7 pr-8 text-sm font-medium text-[var(--tasko-muted)] lg:flex">
+              {status === "authenticated" ? (
+                <>
+                  <Link href="/tasks/mine" className="transition hover:text-[var(--tasko-text)]">
+                    Мои задачи
+                  </Link>
+                  <Link href="/offers/mine" className="transition hover:text-[var(--tasko-text)]">
+                    Мои отклики
+                  </Link>
+                  <Link href="/jobs/mine" className="transition hover:text-[var(--tasko-text)]">
+                    Мои работы
+                  </Link>
+                  <Link href="/profile" className="transition hover:text-[var(--tasko-text)]">
+                    Профиль
+                  </Link>
+                </>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               {status === "authenticated" ? <NotificationsNavLink /> : null}
               <LanguageSwitcher />
               {status === "authenticated" ? (
-                <button
-                  type="button"
-                  onClick={() => void logout()}
-                  className="inline-flex min-h-[42px] items-center justify-center rounded-[12px] border border-[var(--tasko-border)] bg-white px-5 text-sm font-semibold text-[var(--tasko-text)] transition hover:bg-[#f8fafc]"
-                >
-                  {t("common.logout")}
-                </button>
+                <>
+                  <Link
+                    href="/profile"
+                    className="inline-flex min-h-[42px] items-center justify-center rounded-[12px] border border-[var(--tasko-border)] bg-white px-5 text-sm font-semibold text-[var(--tasko-text)] transition hover:bg-[#f8fafc] lg:hidden"
+                  >
+                    {t("common.profile")}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="inline-flex min-h-[42px] items-center justify-center rounded-[12px] border border-[#cdeedd] bg-[#f0fdf4] px-5 text-sm font-semibold text-[#16a34a] transition hover:border-[#b7e5cb] hover:bg-[#dcfce7] hover:text-[#15803d] lg:hidden"
+                  >
+                    {t("common.settings")}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="hidden h-[42px] w-[42px] items-center justify-center rounded-[12px] border border-[#cdeedd] bg-[#f0fdf4] text-[#16a34a] transition hover:border-[#b7e5cb] hover:bg-[#dcfce7] hover:text-[#15803d] lg:inline-flex"
+                    aria-label={t("common.settings")}
+                    title={t("common.settings")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.9]">
+                      <path d="M10.3 3.2h3.4l.5 2.1a7.3 7.3 0 0 1 1.6.7l1.9-1.1 2.4 2.4-1.1 1.9c.3.5.6 1 .7 1.6l2.1.5v3.4l-2.1.5a7.3 7.3 0 0 1-.7 1.6l1.1 1.9-2.4 2.4-1.9-1.1c-.5.3-1 .6-1.6.7l-.5 2.1h-3.4l-.5-2.1a7.3 7.3 0 0 1-1.6-.7l-1.9 1.1-2.4-2.4 1.1-1.9a7.3 7.3 0 0 1-.7-1.6l-2.1-.5v-3.4l2.1-.5c.1-.6.4-1.1.7-1.6L3.9 7.3l2.4-2.4 1.9 1.1c.5-.3 1-.6 1.6-.7l.5-2.1Z" />
+                      <circle cx="12" cy="12" r="3.2" />
+                    </svg>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="inline-flex min-h-[42px] items-center justify-center rounded-[12px] border border-[var(--tasko-border)] bg-white px-5 text-sm font-semibold text-[var(--tasko-text)] transition hover:bg-[#f8fafc]"
+                  >
+                    {t("common.logout")}
+                  </button>
+                </>
               ) : (
                 <>
                   <Link
@@ -215,8 +250,8 @@ export function LandingShellV3() {
                   onClick={() => setSelectedCategoryId(category.id)}
                   className={`rounded-[16px] border p-5 text-left transition ${
                     active
-                      ? "border-[#BFDBFE] bg-[#F8FBFF] shadow-[0_16px_40px_rgba(59,130,246,0.08)]"
-                      : "border-[var(--tasko-border)] bg-white hover:border-[#D6DEEA]"
+                      ? "border-[#86efac] bg-[#f0fdf4] shadow-[0_16px_36px_rgba(34,197,94,0.08)]"
+                      : "border-[var(--tasko-border)] bg-white hover:border-[#86efac] hover:bg-[#f0fdf4] hover:shadow-[0_14px_30px_rgba(34,197,94,0.08)]"
                   }`}
                 >
                   <div className={`inline-flex h-12 w-12 items-center justify-center rounded-[14px] text-xl font-semibold ${category.tone}`}>

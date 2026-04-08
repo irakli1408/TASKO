@@ -49,6 +49,7 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, IR
                 Title = x.task.Title,
                 Description = x.task.Description,
                 Budget = x.task.Budget,
+                PreferredTime = x.task.PreferredTime,
                 CategoryId = x.task.CategoryId,
                 LocationType = x.task.LocationType,
                 Status = x.task.Status.ToString(),

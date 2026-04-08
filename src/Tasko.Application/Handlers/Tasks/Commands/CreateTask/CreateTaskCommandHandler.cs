@@ -38,7 +38,8 @@ public sealed class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand
             createdByUserId: userId,
             title: request.Title.Trim(),
             description: request.Description?.Trim(),
-            budget: request.Budget
+            budget: request.Budget,
+            preferredTime: request.PreferredTime
         );
 
         entity.SetCategory(request.CategoryId); 
@@ -55,9 +56,11 @@ public sealed class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand
             Title = entity.Title,
             Description = entity.Description,
             Budget = entity.Budget,
+            PreferredTime = entity.PreferredTime,
             Status = entity.Status.ToString(),
             CreatedAtUtc = entity.CreatedAtUtc,
-            CategoryId = entity.CategoryId
+            CategoryId = entity.CategoryId,
+            LocationType = entity.LocationType
         };
     }
 }

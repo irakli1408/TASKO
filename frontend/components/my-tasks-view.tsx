@@ -89,25 +89,37 @@ export function MyTasksView() {
           ) : (
             <div className="mt-5 space-y-4">
               {tasks.map((task) => (
-                <article key={task.id} className="tasko-soft-card p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="max-w-3xl">
+                <article key={task.id} className={`tasko-soft-card rounded-[1.8rem] p-5 ${getTaskToneClass(task.status)}`}>
+                  <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="tasko-pill">{getTaskStatusLabel(task.status, t)}</span>
-                        <span className="text-xs uppercase tracking-[0.24em] text-[#8ba0c3]">
-                          #{task.id}
-                        </span>
                       </div>
                       <h3 className="mt-3 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
                         {task.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-7 tasko-muted">
+                      <p className="mt-3 max-w-3xl text-sm leading-7 tasko-muted">
                         {task.description?.trim() || t("myTasks.noDescription")}
                       </p>
+
+                      <div className="mt-5 flex flex-wrap gap-2.5">
+                        <Link
+                          href={`/tasks/${task.id}`}
+                          className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9e4f5] bg-[#fbfdff] px-4 text-[13px] font-semibold text-[#17325c] transition hover:border-[#bfd4f4] hover:bg-[#f4f8ff]"
+                        >
+                          {t("myTasks.openDetails")}
+                        </Link>
+                        <Link
+                          href={`/tasks/create?taskId=${task.id}`}
+                          className="inline-flex h-10 items-center justify-center rounded-full border border-[#dbe7ff] bg-[#eef4ff] px-4 text-[13px] font-semibold text-[#2563eb] transition hover:bg-[#e5efff]"
+                        >
+                          {t("myTasks.continueEditing")}
+                        </Link>
+                      </div>
                     </div>
 
-                    <div className="grid min-w-[220px] gap-3">
-                      <div className="rounded-[1.2rem] bg-white px-4 py-3">
+                    <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                      <div className="rounded-[1.4rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("feed.budget")}
                         </p>
@@ -115,7 +127,15 @@ export function MyTasksView() {
                           {task.budget !== null ? formatBudget(task.budget, locale) : t("task.notSet")}
                         </p>
                       </div>
-                      <div className="rounded-[1.2rem] bg-white px-4 py-3">
+                      <div className="rounded-[1.4rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                          {t("task.preferredTime")}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-[var(--tasko-text)]">
+                          {task.preferredTime?.trim() || t("task.notSet")}
+                        </p>
+                      </div>
+                      <div className="rounded-[1.4rem] border border-[rgba(34,197,94,0.14)] bg-[rgba(34,197,94,0.07)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("myTasks.created")}
                         </p>
@@ -123,7 +143,7 @@ export function MyTasksView() {
                           {formatDate(task.createdAtUtc, locale, t)}
                         </p>
                       </div>
-                      <div className="rounded-[1.2rem] bg-white px-4 py-3">
+                      <div className="rounded-[1.4rem] border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("myTasks.assignedExecutor")}
                         </p>
@@ -138,15 +158,6 @@ export function MyTasksView() {
                         </p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <Link href={`/tasks/${task.id}`} className="tasko-secondary-btn">
-                      {t("myTasks.openDetails")}
-                    </Link>
-                    <Link href={`/tasks/create?taskId=${task.id}`} className="tasko-secondary-btn">
-                      {t("myTasks.continueEditing")}
-                    </Link>
                   </div>
                 </article>
               ))}
@@ -214,4 +225,34 @@ function getTaskStatusLabel(status: string, t: (key: string) => string) {
   if (normalized === "cancelled" || normalized === "canceled") return t("task.statusCancelled");
 
   return status;
+}
+
+function getTaskToneClass(status: string) {
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === "draft") {
+    return "border-[rgba(59,130,246,0.16)] bg-[rgba(59,130,246,0.055)]";
+  }
+
+  if (normalized === "published") {
+    return "border-[rgba(34,197,94,0.16)] bg-[rgba(34,197,94,0.055)]";
+  }
+
+  if (normalized === "assigned") {
+    return "border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.06)]";
+  }
+
+  if (normalized === "inprogress" || normalized === "in progress") {
+    return "border-[rgba(99,102,241,0.16)] bg-[rgba(99,102,241,0.06)]";
+  }
+
+  if (normalized === "completed") {
+    return "border-[rgba(34,197,94,0.16)] bg-[rgba(34,197,94,0.06)]";
+  }
+
+  if (normalized === "cancelled" || normalized === "canceled") {
+    return "border-[rgba(239,68,68,0.16)] bg-[rgba(239,68,68,0.055)]";
+  }
+
+  return "";
 }

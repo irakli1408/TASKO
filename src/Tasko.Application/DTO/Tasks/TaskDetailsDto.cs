@@ -14,6 +14,7 @@ public sealed class TaskDetailsDto
     public string Description { get; set; } = string.Empty;
 
     public decimal? Budget { get; set; }
+    public string? PreferredTime { get; set; }
 
     // If your Task.Status is already int -> change to int
     public int Status { get; set; }

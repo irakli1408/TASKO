@@ -12,6 +12,7 @@ public sealed class TaskDto
     public string Title { get; init; } = null!;
     public string? Description { get; init; }
     public decimal? Budget { get; init; }
+    public string? PreferredTime { get; init; }
     public long CategoryId { get; init; }
     public Tasko.Domain.Entities.Accounts.Users.LocationType LocationType { get; init; }
     public string Status { get; init; } = null!;

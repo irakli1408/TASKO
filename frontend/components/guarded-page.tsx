@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CurrentUser } from "@/lib/auth";
 import { useAuth } from "@/components/auth-provider";
@@ -24,6 +24,7 @@ export function GuardedPage({
   requireExecutor = false
 }: GuardedPageProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { status, user, logout } = useAuth();
   const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,28 +71,32 @@ export function GuardedPage({
 
             <div className="hidden min-w-0 max-w-full lg:flex lg:flex-1 lg:justify-end">
               <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto pb-1">
-              <Link href="/feed" className="tasko-secondary-btn shrink-0 px-3 py-2">
+              <Link href="/feed" className={navButtonClass(pathname, "/feed")}>
                 {t("common.feed")}
               </Link>
-              <Link href="/tasks/create" className="tasko-secondary-btn shrink-0 px-3 py-2">
+              <Link href="/tasks/create" className={navButtonClass(pathname, "/tasks/create")}>
                 {t("common.createTask")}
               </Link>
-              <Link href="/tasks/mine" className="tasko-secondary-btn shrink-0 px-3 py-2">
+              <Link href="/tasks/mine" className={navButtonClass(pathname, "/tasks/mine")}>
                 {t("common.myTasks")}
               </Link>
-              <Link href="/offers/mine" className="tasko-secondary-btn shrink-0 px-3 py-2">
+              <Link href="/offers/mine" className={navButtonClass(pathname, "/offers/mine")}>
                 {t("common.myOffers")}
               </Link>
-              <Link href="/jobs/mine" className="tasko-secondary-btn shrink-0 px-3 py-2">
+              <Link href="/jobs/mine" className={navButtonClass(pathname, "/jobs/mine")}>
                 {t("common.myJobs")}
               </Link>
               <NotificationsNavLink />
-              <Link href="/profile" className="tasko-secondary-btn px-4 py-2">
+              <Link href="/profile" className={navButtonClass(pathname, "/profile")}>
                 {t("common.profile")}
               </Link>
               <Link
                 href="/settings"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#cdeedd] bg-[#f0fdf4] text-[#16a34a] transition hover:border-[#b7e5cb] hover:bg-[#dcfce7] hover:text-[#15803d]"
+                className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border transition ${
+                  isRouteActive(pathname, "/settings")
+                    ? "border-[#86efac] bg-[#dcfce7] text-[#15803d] shadow-[0_10px_24px_rgba(34,197,94,0.18)]"
+                    : "border-[#cdeedd] bg-[#f0fdf4] text-[#16a34a] hover:border-[#b7e5cb] hover:bg-[#dcfce7] hover:text-[#15803d]"
+                }`}
                 aria-label={t("common.settings")}
                 title={t("common.settings")}
               >
@@ -144,28 +149,28 @@ export function GuardedPage({
 
             <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
-                <Link href="/feed" className="tasko-secondary-btn px-4 py-2 text-center">
+                <Link href="/feed" className={mobileNavButtonClass(pathname, "/feed")}>
                   {t("common.feed")}
                 </Link>
-                <Link href="/tasks/create" className="tasko-secondary-btn px-4 py-2 text-center">
+                <Link href="/tasks/create" className={mobileNavButtonClass(pathname, "/tasks/create")}>
                   {t("common.createTask")}
                 </Link>
-                <Link href="/tasks/mine" className="tasko-secondary-btn px-4 py-2 text-center">
+                <Link href="/tasks/mine" className={mobileNavButtonClass(pathname, "/tasks/mine")}>
                   {t("common.myTasks")}
                 </Link>
-                <Link href="/offers/mine" className="tasko-secondary-btn px-4 py-2 text-center">
+                <Link href="/offers/mine" className={mobileNavButtonClass(pathname, "/offers/mine")}>
                   {t("common.myOffers")}
                 </Link>
-                <Link href="/jobs/mine" className="tasko-secondary-btn px-4 py-2 text-center">
+                <Link href="/jobs/mine" className={mobileNavButtonClass(pathname, "/jobs/mine")}>
                   {t("common.myJobs")}
                 </Link>
                 <NotificationsNavLink />
-                <Link href="/profile" className="tasko-secondary-btn px-4 py-2 text-center">
+                <Link href="/profile" className={mobileNavButtonClass(pathname, "/profile")}>
                   {t("common.profile")}
                 </Link>
                 <Link
                   href="/settings"
-                  className="tasko-secondary-btn px-4 py-2 text-center"
+                  className={mobileNavButtonClass(pathname, "/settings")}
                 >
                   {t("common.settings")}
                 </Link>
@@ -210,4 +215,56 @@ function canUseExecutorFeed(user: CurrentUser | null) {
   }
 
   return user.isExecutorActive;
+}
+
+function navButtonClass(pathname: string | null, href: string) {
+  const active = isRouteActive(pathname, href);
+
+  return active
+    ? "shrink-0 rounded-[12px] border border-[#86efac] bg-[#f0fdf4] px-4 py-2 text-sm font-semibold text-[#15803d] shadow-[0_10px_24px_rgba(34,197,94,0.16)]"
+    : "tasko-secondary-btn shrink-0 px-4 py-2";
+}
+
+function mobileNavButtonClass(pathname: string | null, href: string) {
+  const active = isRouteActive(pathname, href);
+
+  return active
+    ? "rounded-[12px] border border-[#86efac] bg-[#f0fdf4] px-4 py-2 text-center text-sm font-semibold text-[#15803d] shadow-[0_10px_24px_rgba(34,197,94,0.16)]"
+    : "tasko-secondary-btn px-4 py-2 text-center";
+}
+
+function isRouteActive(pathname: string | null, href: string) {
+  if (!pathname) {
+    return false;
+  }
+
+  if (pathname === href) {
+    return true;
+  }
+
+  if (href === "/tasks/mine") {
+    return pathname.startsWith("/tasks/") && pathname !== "/tasks/create";
+  }
+
+  if (href === "/settings") {
+    return pathname.startsWith("/settings");
+  }
+
+  if (href === "/profile") {
+    return pathname.startsWith("/profile") || pathname.startsWith("/executors/");
+  }
+
+  if (href === "/offers/mine") {
+    return pathname.startsWith("/offers/");
+  }
+
+  if (href === "/jobs/mine") {
+    return pathname.startsWith("/jobs/");
+  }
+
+  if (href === "/feed") {
+    return pathname === "/feed";
+  }
+
+  return false;
 }

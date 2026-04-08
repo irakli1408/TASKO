@@ -1,84 +1,77 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GuardedPage } from "@/components/guarded-page";
+import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
+import { LocationType } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/profile";
+import { MyJobItem, getMyJobs } from "@/lib/tasks";
 
 type JobStatus = "assigned" | "inprogress" | "completed";
 
-type MockJob = {
-  id: number;
-  title: string;
-  category: string;
-  location: string;
-  budget: number;
-  status: JobStatus;
-  customerName: string;
-  startedAt: string;
-  description: string;
-};
-
-const mockJobs: MockJob[] = [
-  {
-    id: 41,
-    title: "Сборка кухонного шкафа",
-    category: "Сборка мебели",
-    location: "Сабуртало",
-    budget: 220,
-    status: "assigned",
-    customerName: "Мариам Беридзе",
-    startedAt: "2026-04-07T08:30:00Z",
-    description: "Нужно собрать верхний кухонный шкаф и закрепить его на стене."
-  },
-  {
-    id: 39,
-    title: "Замена розеток в спальне",
-    category: "Электрика",
-    location: "Ваке",
-    budget: 150,
-    status: "inprogress",
-    customerName: "Иракли Джгереная",
-    startedAt: "2026-04-06T15:00:00Z",
-    description: "Старые розетки снять, установить новые, проверить работу и безопасность."
-  },
-  {
-    id: 35,
-    title: "Выгул собаки на выходных",
-    category: "Выгул собак",
-    location: "Мтацминда",
-    budget: 80,
-    status: "completed",
-    customerName: "Нино Габуния",
-    startedAt: "2026-04-04T09:15:00Z",
-    description: "Два выгула в субботу и воскресенье, по 30 минут."
-  }
-];
-
 export function MyJobsView() {
+  const { getAccessToken } = useAuth();
   const { locale, t } = useI18n();
+  const [jobs, setJobs] = useState<MyJobItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | JobStatus>("all");
+
+  const loadJobs = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = await getAccessToken();
+
+      if (!token) {
+        throw new Error(t("createTask.notAuthenticated"));
+      }
+
+      const result = await getMyJobs(token);
+      setJobs(result);
+    } catch (loadError) {
+      setError(getErrorMessage(loadError, t("myJobs.loadError")));
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessToken, t]);
+
+  useEffect(() => {
+    void loadJobs();
+  }, [loadJobs]);
 
   const filteredJobs = useMemo(() => {
     if (statusFilter === "all") {
-      return mockJobs;
+      return jobs;
     }
 
-    return mockJobs.filter((job) => job.status === statusFilter);
-  }, [statusFilter]);
+    return jobs.filter((job) => normalizeJobStatus(job.status) === statusFilter);
+  }, [jobs, statusFilter]);
 
   const stats = useMemo(
     () => ({
-      total: mockJobs.length,
-      active: mockJobs.filter((job) => job.status === "assigned" || job.status === "inprogress").length,
-      completed: mockJobs.filter((job) => job.status === "completed").length
+      total: jobs.length,
+      active: jobs.filter((job) => {
+        const status = normalizeJobStatus(job.status);
+        return status === "assigned" || status === "inprogress";
+      }).length,
+      completed: jobs.filter((job) => normalizeJobStatus(job.status) === "completed").length
     }),
-    []
+    [jobs]
   );
 
   return (
     <GuardedPage title={t("myJobs.title")} description={t("myJobs.description")}>
       <div className="grid gap-6">
+        {error ? (
+          <div className="rounded-[1.6rem] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
         <section className="grid gap-4 md:grid-cols-3">
           <JobStatCard label={t("myJobs.allJobs")} value={String(stats.total)} tone="blue" />
           <JobStatCard label={t("myJobs.active")} value={String(stats.active)} tone="amber" />
@@ -126,67 +119,80 @@ export function MyJobsView() {
           </div>
 
           <div className="p-6">
-            {filteredJobs.length === 0 ? (
+            {loading ? (
+              <div className="tasko-soft-card p-6 text-sm tasko-muted">{t("myJobs.loading")}</div>
+            ) : filteredJobs.length === 0 ? (
               <div className="tasko-soft-card p-6 text-sm tasko-muted">{t("myJobs.empty")}</div>
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
-                {filteredJobs.map((job) => (
-                  <article
-                    key={job.id}
-                    className="rounded-[1.8rem] border border-[#dfe7f3] bg-white p-5 shadow-[0_16px_34px_rgba(42,78,148,0.08)]"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="tasko-pill">#{job.id}</span>
-                          <span
-                            className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${getJobTone(
-                              job.status
-                            )}`}
-                          >
-                            {getJobStatusLabel(job.status, t)}
-                          </span>
+                {filteredJobs.map((job) => {
+                  const normalizedStatus = normalizeJobStatus(job.status);
+
+                  return (
+                    <article
+                      key={job.taskId}
+                      className="rounded-[1.8rem] border border-[#dfe7f3] bg-white p-5 shadow-[0_16px_34px_rgba(42,78,148,0.08)]"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${getJobTone(
+                                normalizedStatus
+                              )}`}
+                            >
+                              {getJobStatusLabel(normalizedStatus, t)}
+                            </span>
+                          </div>
+                          <h3 className="mt-3 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                            {job.taskTitle}
+                          </h3>
+                          <p className="mt-2 text-sm tasko-muted">{job.customerName}</p>
                         </div>
-                        <h3 className="mt-3 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
-                          {job.title}
-                        </h3>
-                        <p className="mt-2 text-sm tasko-muted">{job.customerName}</p>
+
+                        <div className="rounded-[1.25rem] bg-[#f4f7fc] px-4 py-3 text-right">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                            {t("feed.budget")}
+                          </p>
+                          <p className="mt-2 text-lg font-semibold text-[var(--tasko-text)]">
+                            {job.budget !== null ? formatBudget(job.budget, locale) : t("task.notSet")}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="rounded-[1.25rem] bg-[#f4f7fc] px-4 py-3 text-right">
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
-                          {t("feed.budget")}
-                        </p>
-                        <p className="mt-2 text-lg font-semibold text-[var(--tasko-text)]">
-                          {formatBudget(job.budget, locale)}
-                        </p>
+                      <p className="mt-4 text-sm leading-7 tasko-muted">
+                        {job.taskDescription?.trim() || t("myTasks.noDescription")}
+                      </p>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <JobMetaCard label={t("myJobs.category")} value={job.categoryName} />
+                        <JobMetaCard label={t("myJobs.location")} value={getLocationLabel(job.locationType, t)} />
+                        <JobMetaCard label={t("myJobs.startedAt")} value={formatDate(job.startedAtUtc, locale)} />
                       </div>
-                    </div>
 
-                    <p className="mt-4 text-sm leading-7 tasko-muted">{job.description}</p>
+                      {job.preferredTime?.trim() ? (
+                        <div className="mt-4 inline-flex rounded-full border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-3 py-1.5 text-xs font-semibold text-[#315294]">
+                          {t("task.preferredTime")}: {job.preferredTime}
+                        </div>
+                      ) : null}
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                      <JobMetaCard label={t("myJobs.category")} value={job.category} />
-                      <JobMetaCard label={t("myJobs.location")} value={job.location} />
-                      <JobMetaCard label={t("myJobs.startedAt")} value={formatDate(job.startedAt, locale)} />
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <Link href={`/tasks/${job.id}`} className="tasko-secondary-btn">
-                        {t("myJobs.openTask")}
-                      </Link>
-                      {job.status === "completed" ? (
-                        <Link href={`/tasks/${job.id}`} className="tasko-secondary-btn">
-                          {t("myJobs.reviewResult")}
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <Link href={`/tasks/${job.taskId}`} className="tasko-secondary-btn">
+                          {t("myJobs.openTask")}
                         </Link>
-                      ) : (
-                        <Link href={`/tasks/${job.id}/chat`} className="tasko-primary-btn">
-                          {t("myJobs.openChat")}
-                        </Link>
-                      )}
-                    </div>
-                  </article>
-                ))}
+                        {normalizedStatus === "completed" ? (
+                          <Link href={`/tasks/${job.taskId}`} className="tasko-secondary-btn">
+                            {t("myJobs.reviewResult")}
+                          </Link>
+                        ) : (
+                          <Link href={`/tasks/${job.taskId}/chat`} className="tasko-primary-btn">
+                            {t("myJobs.openChat")}
+                          </Link>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -243,6 +249,20 @@ function getJobStatusLabel(status: JobStatus, t: (key: string) => string) {
   return t("task.statusAssigned");
 }
 
+function normalizeJobStatus(status: string): JobStatus {
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === "completed") {
+    return "completed";
+  }
+
+  if (normalized === "inprogress" || normalized === "in progress") {
+    return "inprogress";
+  }
+
+  return "assigned";
+}
+
 function formatBudget(value: number, locale: string) {
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -259,4 +279,20 @@ function formatDate(value: string, locale: string) {
     day: "numeric",
     year: "numeric"
   }).format(date);
+}
+
+function getLocationLabel(locationType: LocationType, t: (key: string) => string) {
+  if (locationType === LocationType.AllCity) return t("location.allCity");
+  if (locationType === LocationType.Mtatsminda) return t("location.mtatsminda");
+  if (locationType === LocationType.Vake) return t("location.vake");
+  if (locationType === LocationType.Saburtalo) return t("location.saburtalo");
+  if (locationType === LocationType.Krtsanisi) return t("location.krtsanisi");
+  if (locationType === LocationType.Isani) return t("location.isani");
+  if (locationType === LocationType.Samgori) return t("location.samgori");
+  if (locationType === LocationType.Chugureti) return t("location.chugureti");
+  if (locationType === LocationType.Didube) return t("location.didube");
+  if (locationType === LocationType.Nadzaladevi) return t("location.nadzaladevi");
+  if (locationType === LocationType.Gldani) return t("location.gldani");
+
+  return `Location #${locationType}`;
 }

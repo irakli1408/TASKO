@@ -7,12 +7,13 @@ public sealed class TaskPost
 {
     private TaskPost() { }
 
-    public TaskPost(long createdByUserId, string title, string? description, decimal? budget)
+    public TaskPost(long createdByUserId, string title, string? description, decimal? budget, string? preferredTime = null)
     {
         CreatedByUserId = createdByUserId;
         Title = title;
         Description = description;
         Budget = budget;
+        PreferredTime = string.IsNullOrWhiteSpace(preferredTime) ? null : preferredTime.Trim();
         Status = TaskStatus.Draft;
         CreatedAtUtc = DateTime.UtcNow;
     }
@@ -24,6 +25,7 @@ public sealed class TaskPost
     public string Title { get; private set; } = null!;
     public string? Description { get; private set; }
     public decimal? Budget { get; private set; }
+    public string? PreferredTime { get; private set; }
     public int ViewsCount { get; private set; }
     public void IncrementViewsCount() => ViewsCount++;
 
@@ -52,7 +54,7 @@ public sealed class TaskPost
         PublishedAtUtc = DateTime.UtcNow;
     }
 
-    public void UpdateDraft(string? title = null, string? description = null, decimal? budget = null)
+    public void UpdateDraft(string? title = null, string? description = null, decimal? budget = null, string? preferredTime = null)
     {
         if (Status != TaskStatus.Draft)
             throw new InvalidOperationException("Task cannot be edited after publish.");
@@ -76,6 +78,9 @@ public sealed class TaskPost
 
             Budget = budget;
         }
+
+        if (preferredTime is not null)
+            PreferredTime = string.IsNullOrWhiteSpace(preferredTime) ? null : preferredTime.Trim();
     }
 
     public void Assign(long executorUserId)

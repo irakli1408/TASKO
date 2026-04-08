@@ -25,6 +25,7 @@ type TaskForm = {
   title: string;
   description: string;
   budget: string;
+  preferredTime: string;
   categoryId: string;
   locationType: LocationType;
 };
@@ -33,6 +34,7 @@ const initialForm: TaskForm = {
   title: "",
   description: "",
   budget: "",
+  preferredTime: "",
   categoryId: "",
   locationType: LocationType.AllCity
 };
@@ -125,6 +127,7 @@ export function CreateTaskView() {
         title: taskToEdit.title,
         description: taskToEdit.description ?? "",
         budget: taskToEdit.budget !== null ? String(taskToEdit.budget) : "",
+        preferredTime: taskToEdit.preferredTime ?? "",
         categoryId: String(taskToEdit.categoryId),
         locationType: taskToEdit.locationType
       });
@@ -208,6 +211,7 @@ export function CreateTaskView() {
         title: form.title.trim(),
         description: form.description.trim() || null,
         budget: parsedBudget,
+        preferredTime: form.preferredTime.trim() || null,
         categoryId: Number(form.categoryId),
         locationType: form.locationType
       };
@@ -221,6 +225,7 @@ export function CreateTaskView() {
                 title: payload.title,
                 description: payload.description,
                 budget: payload.budget,
+                preferredTime: payload.preferredTime,
                 categoryId: payload.categoryId,
                 locationType: payload.locationType
               }
@@ -482,6 +487,18 @@ export function CreateTaskView() {
                     />
                   </label>
 
+                  <label className="space-y-2">
+                    <span className="tasko-label">{t("createTask.preferredTime")}</span>
+                    <input
+                      value={form.preferredTime}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, preferredTime: event.target.value }))
+                      }
+                      className="tasko-input"
+                      placeholder={t("createTask.preferredTimePlaceholder")}
+                    />
+                  </label>
+
                   <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
                     <label className="space-y-2">
                       <span className="tasko-label">{t("feed.budget")}</span>
@@ -577,6 +594,9 @@ export function CreateTaskView() {
                       <div className="mt-4 grid gap-1 text-sm text-white/90">
                         <span>
                           {t("feed.budget")}: {form.budget.trim() || "—"}
+                        </span>
+                        <span>
+                          {t("task.preferredTime")}: {form.preferredTime.trim() || "—"}
                         </span>
                         <span>
                           {t("createTask.mainLocation")}:{" "}

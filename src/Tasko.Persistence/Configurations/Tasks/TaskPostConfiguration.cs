@@ -17,6 +17,7 @@ public sealed class TaskPostConfiguration : IEntityTypeConfiguration<TaskPost>
         e.Property(x => x.Title).HasMaxLength(200).IsRequired();
         e.Property(x => x.Description).HasMaxLength(4000);
         e.Property(x => x.Budget).HasColumnType("decimal(18,2)");
+        e.Property(x => x.PreferredTime).HasMaxLength(120);
 
         e.Property(x => x.Status).IsRequired();
         e.Property(x => x.CreatedAtUtc).IsRequired();

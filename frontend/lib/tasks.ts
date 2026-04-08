@@ -9,6 +9,7 @@ export type TaskFeedItem = {
   title: string;
   description: string | null;
   budget: number | null;
+  preferredTime: string | null;
   categoryId: number;
   locationType: LocationType;
   createdAtUtc: string;
@@ -24,6 +25,7 @@ export type TaskRecord = {
   title: string;
   description: string | null;
   budget: number | null;
+  preferredTime: string | null;
   categoryId: number;
   locationType: LocationType;
   status: string;
@@ -41,6 +43,7 @@ export type TaskDetails = {
   title: string;
   description: string;
   budget: number | null;
+  preferredTime: string | null;
   status: number;
   createdAtUtc: string;
   viewsCount: number;
@@ -69,6 +72,34 @@ export type TaskOffer = {
   comment: string | null;
   status: string;
   createdAtUtc: string;
+};
+
+export type MyOfferItem = {
+  offerId: number;
+  taskId: number;
+  taskTitle: string;
+  taskDescription: string | null;
+  price: number;
+  status: string;
+  categoryId: number;
+  categoryName: string;
+  locationType: LocationType;
+  customerName: string;
+  createdAtUtc: string;
+};
+
+export type MyJobItem = {
+  taskId: number;
+  taskTitle: string;
+  taskDescription: string | null;
+  budget: number | null;
+  preferredTime: string | null;
+  status: string;
+  categoryId: number;
+  categoryName: string;
+  locationType: LocationType;
+  customerName: string;
+  startedAtUtc: string;
 };
 
 export type TaskImage = {
@@ -108,6 +139,7 @@ export type CreateTaskPayload = {
   title: string;
   description: string | null;
   budget: number | null;
+  preferredTime: string | null;
   categoryId: number;
   locationType: LocationType;
 };
@@ -116,6 +148,7 @@ export type UpdateTaskPayload = {
   title?: string | null;
   description?: string | null;
   budget?: number | null;
+  preferredTime?: string | null;
   categoryId?: number | null;
   locationType?: LocationType | null;
 };
@@ -168,6 +201,48 @@ export async function getMyTasks(
   const suffix = query.toString() ? `?${query.toString()}` : "";
 
   return apiFetch<TaskRecord[]>(`/Tasks/mine${suffix}`, {
+    token
+  });
+}
+
+export async function getMyOffers(
+  token: string,
+  options: { skip?: number; take?: number } = {}
+) {
+  const query = new URLSearchParams();
+
+  if (options.skip !== undefined) {
+    query.set("skip", String(options.skip));
+  }
+
+  if (options.take !== undefined) {
+    query.set("take", String(options.take));
+  }
+
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  return apiFetch<MyOfferItem[]>(`/Tasks/offers/mine${suffix}`, {
+    token
+  });
+}
+
+export async function getMyJobs(
+  token: string,
+  options: { skip?: number; take?: number } = {}
+) {
+  const query = new URLSearchParams();
+
+  if (options.skip !== undefined) {
+    query.set("skip", String(options.skip));
+  }
+
+  if (options.take !== undefined) {
+    query.set("take", String(options.take));
+  }
+
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  return apiFetch<MyJobItem[]>(`/Tasks/jobs/mine${suffix}`, {
     token
   });
 }

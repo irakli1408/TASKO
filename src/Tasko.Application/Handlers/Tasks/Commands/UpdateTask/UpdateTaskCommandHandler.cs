@@ -26,6 +26,7 @@ public sealed class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand
         if (request.Title is null
             && request.Description is null
             && request.Budget is null
+            && request.PreferredTime is null
             && request.CategoryId is null
             && request.LocationType is null)
         {
@@ -70,7 +71,8 @@ public sealed class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand
         task.UpdateDraft(
             title: request.Title,
             description: request.Description,
-            budget: request.Budget
+            budget: request.Budget,
+            preferredTime: request.PreferredTime
         );
 
         await _db.SaveChangesAsync(ct);

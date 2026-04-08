@@ -1,83 +1,69 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { GuardedPage } from "@/components/guarded-page";
+import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
+import { getErrorMessage } from "@/lib/profile";
+import { getMyOffers, MyOfferItem } from "@/lib/tasks";
 
-type OfferStatus = "pending" | "accepted" | "rejected";
-
-type MockOffer = {
-  id: number;
-  taskId: number;
-  taskTitle: string;
-  category: string;
-  location: string;
-  price: number;
-  status: OfferStatus;
-  createdAt: string;
-  customerName: string;
-  description: string;
-};
-
-const mockOffers: MockOffer[] = [
-  {
-    id: 301,
-    taskId: 23,
-    taskTitle: "Замена смесителя на кухне",
-    category: "Сантехника",
-    location: "Ваке",
-    price: 120,
-    status: "pending",
-    createdAt: "2026-04-06T13:45:00Z",
-    customerName: "Нино Беридзе",
-    description: "Нужно снять старый смеситель и аккуратно поставить новый сегодня вечером."
-  },
-  {
-    id: 302,
-    taskId: 19,
-    taskTitle: "Сборка шкафа и тумбы",
-    category: "Сборка мебели",
-    location: "Сабуртало",
-    price: 180,
-    status: "accepted",
-    createdAt: "2026-04-05T10:10:00Z",
-    customerName: "Георгий Мчедлишвили",
-    description: "Две коробки мебели, желательно прийти с инструментом и собрать за один визит."
-  },
-  {
-    id: 303,
-    taskId: 14,
-    taskTitle: "Выгул собаки два раза в день",
-    category: "Выгул собак",
-    location: "Мтацминда",
-    price: 90,
-    status: "rejected",
-    createdAt: "2026-04-03T08:25:00Z",
-    customerName: "Мариам Джапаридзе",
-    description: "Ищу исполнителя на три дня, утром и вечером по 30 минут."
-  }
-];
+type OfferStatusFilter = "all" | "pending" | "accepted" | "rejected";
 
 export function MyOffersView() {
+  const router = useRouter();
+  const { status, getAccessToken } = useAuth();
   const { locale, t } = useI18n();
-  const [statusFilter, setStatusFilter] = useState<"all" | OfferStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<OfferStatusFilter>("all");
+  const [offers, setOffers] = useState<MyOfferItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadOffers() {
+      if (status !== "authenticated") {
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const token = await getAccessToken();
+
+        if (!token) {
+          router.replace("/login");
+          return;
+        }
+
+        const data = await getMyOffers(token);
+        setOffers(data);
+      } catch (loadError) {
+        setError(getErrorMessage(loadError, t("task.loadError")));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadOffers();
+  }, [getAccessToken, router, status, t]);
 
   const filteredOffers = useMemo(() => {
     if (statusFilter === "all") {
-      return mockOffers;
+      return offers;
     }
 
-    return mockOffers.filter((offer) => offer.status === statusFilter);
-  }, [statusFilter]);
+    return offers.filter((offer) => offer.status.trim().toLowerCase() === statusFilter);
+  }, [offers, statusFilter]);
 
   const stats = useMemo(
     () => ({
-      total: mockOffers.length,
-      pending: mockOffers.filter((offer) => offer.status === "pending").length,
-      accepted: mockOffers.filter((offer) => offer.status === "accepted").length
+      total: offers.length,
+      pending: offers.filter((offer) => offer.status.trim().toLowerCase() === "pending").length,
+      accepted: offers.filter((offer) => offer.status.trim().toLowerCase() === "accepted").length
     }),
-    []
+    [offers]
   );
 
   return (
@@ -130,13 +116,19 @@ export function MyOffersView() {
           </div>
 
           <div className="p-6">
-            {filteredOffers.length === 0 ? (
+            {loading ? (
+              <div className="tasko-soft-card p-6 text-sm tasko-muted">{t("common.loadingWorkspace")}</div>
+            ) : error ? (
+              <div className="rounded-[1.6rem] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                {error}
+              </div>
+            ) : filteredOffers.length === 0 ? (
               <div className="tasko-soft-card p-6 text-sm tasko-muted">{t("myOffers.empty")}</div>
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
                 {filteredOffers.map((offer) => (
                   <article
-                    key={offer.id}
+                    key={offer.offerId}
                     className="rounded-[1.8rem] border border-[#dfe7f3] bg-white p-5 shadow-[0_16px_34px_rgba(42,78,148,0.08)]"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -167,14 +159,16 @@ export function MyOffersView() {
                       </div>
                     </div>
 
-                    <p className="mt-4 text-sm leading-7 tasko-muted">{offer.description}</p>
+                    <p className="mt-4 text-sm leading-7 tasko-muted">
+                      {offer.taskDescription?.trim() || t("task.noDescription")}
+                    </p>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                      <OfferMetaCard label={t("myOffers.category")} value={offer.category} />
-                      <OfferMetaCard label={t("myOffers.location")} value={offer.location} />
+                      <OfferMetaCard label={t("myOffers.category")} value={offer.categoryName} />
+                      <OfferMetaCard label={t("myOffers.location")} value={getLocationLabel(offer.locationType, t)} />
                       <OfferMetaCard
                         label={t("myOffers.sentAt")}
-                        value={formatDate(offer.createdAt, locale)}
+                        value={formatDate(offer.createdAtUtc, locale)}
                       />
                     </div>
 
@@ -182,7 +176,7 @@ export function MyOffersView() {
                       <Link href={`/tasks/${offer.taskId}`} className="tasko-secondary-btn">
                         {t("myOffers.openTask")}
                       </Link>
-                      {offer.status === "accepted" ? (
+                      {offer.status.trim().toLowerCase() === "accepted" ? (
                         <Link href={`/tasks/${offer.taskId}/chat`} className="tasko-primary-btn">
                           {t("myOffers.openChat")}
                         </Link>
@@ -238,15 +232,17 @@ function OfferMetaCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function getOfferTone(status: OfferStatus) {
-  if (status === "accepted") return "bg-[#eef9f0] text-[#23724d]";
-  if (status === "rejected") return "bg-[#fff1f1] text-[#c53a3a]";
+function getOfferTone(status: string) {
+  const value = status.trim().toLowerCase();
+  if (value === "accepted") return "bg-[#eef9f0] text-[#23724d]";
+  if (value === "rejected") return "bg-[#fff1f1] text-[#c53a3a]";
   return "bg-[#eef4ff] text-[#2f6bff]";
 }
 
-function getOfferStatusLabel(status: OfferStatus, t: (key: string) => string) {
-  if (status === "accepted") return t("myOffers.accepted");
-  if (status === "rejected") return t("myOffers.rejected");
+function getOfferStatusLabel(status: string, t: (key: string) => string) {
+  const value = status.trim().toLowerCase();
+  if (value === "accepted") return t("myOffers.accepted");
+  if (value === "rejected") return t("myOffers.rejected");
   return t("myOffers.pending");
 }
 
@@ -266,4 +262,33 @@ function formatDate(value: string, locale: string) {
     day: "numeric",
     year: "numeric"
   }).format(date);
+}
+
+function getLocationLabel(locationType: number, t: (key: string) => string) {
+  switch (locationType) {
+    case 0:
+      return t("location.allCity");
+    case 1:
+      return t("location.mtatsminda");
+    case 2:
+      return t("location.vake");
+    case 3:
+      return t("location.saburtalo");
+    case 4:
+      return t("location.krtsanisi");
+    case 5:
+      return t("location.isani");
+    case 6:
+      return t("location.samgori");
+    case 7:
+      return t("location.chugureti");
+    case 8:
+      return t("location.didube");
+    case 9:
+      return t("location.nadzaladevi");
+    case 10:
+      return t("location.gldani");
+    default:
+      return t("profile.unknown");
+  }
 }

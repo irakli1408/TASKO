@@ -1,7 +1,9 @@
 {
-  "/notifications/page": "app/notifications/page.js",
+  "/tasks/create/page": "app/tasks/create/page.js",
+  "/profile/page": "app/profile/page.js",
   "/tasks/[taskId]/page": "app/tasks/[taskId]/page.js",
-  "/offers/mine/page": "app/offers/mine/page.js",
-  "/tasks/[taskId]/chat/page": "app/tasks/[taskId]/chat/page.js",
-  "/feed/page": "app/feed/page.js"
+  "/feed/page": "app/feed/page.js",
+  "/jobs/mine/page": "app/jobs/mine/page.js",
+  "/notifications/page": "app/notifications/page.js",
+  "/login/page": "app/login/page.js"
 }

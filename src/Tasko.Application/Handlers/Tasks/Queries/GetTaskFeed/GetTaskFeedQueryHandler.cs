@@ -76,6 +76,7 @@ public sealed class GetTaskFeedQueryHandler
                     Title = task.Title,
                     Description = task.Description,
                     Budget = task.Budget,
+                    PreferredTime = task.PreferredTime,
                     CategoryId = task.CategoryId,
                     LocationType = task.LocationType,
                     CreatedAtUtc = task.CreatedAtUtc,

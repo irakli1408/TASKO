@@ -106,6 +106,7 @@ public sealed class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, 
             Title = task.Title,
             Description = task.Description,
             Budget = task.Budget,
+            PreferredTime = task.PreferredTime,
 
             // if Status is enum, cast; if int, replace with task.Status
             Status = (int)task.Status,

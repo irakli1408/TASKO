@@ -8,6 +8,7 @@ public sealed record CreateTaskCommand(
     string Title,
     string? Description,
     decimal? Budget,
+    string? PreferredTime,
     long CategoryId,
     LocationType LocationType
 ) : IRequest<TaskDto>;

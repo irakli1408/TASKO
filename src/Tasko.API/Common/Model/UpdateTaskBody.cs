@@ -7,6 +7,7 @@ namespace Tasko.API.Common.Model
         public string? Title { get; init; }
         public string? Description { get; init; }
         public decimal? Budget { get; init; }
+        public string? PreferredTime { get; init; }
         public long? CategoryId { get; init; }
         public LocationType? LocationType { get; init; }
     }
