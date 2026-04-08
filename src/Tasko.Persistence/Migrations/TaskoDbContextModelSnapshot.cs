@@ -509,6 +509,9 @@ namespace Tasko.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<DateTime?>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<long?>("AssignedToUserId")
                         .HasColumnType("bigint");
 
@@ -517,6 +520,9 @@ namespace Tasko.Persistence.Migrations
 
                     b.Property<long>("CategoryId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -538,6 +544,9 @@ namespace Tasko.Persistence.Migrations
                         .HasColumnType("nvarchar(120)");
 
                     b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartedAtUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Status")

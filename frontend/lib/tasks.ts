@@ -47,6 +47,7 @@ export type TaskDetails = {
   status: number;
   createdAtUtc: string;
   viewsCount: number;
+  review: TaskReview | null;
 };
 
 export type TaskStats = {
@@ -99,7 +100,9 @@ export type MyJobItem = {
   categoryName: string;
   locationType: LocationType;
   customerName: string;
-  startedAtUtc: string;
+  assignedAtUtc: string | null;
+  startedAtUtc: string | null;
+  completedAtUtc: string | null;
 };
 
 export type TaskImage = {

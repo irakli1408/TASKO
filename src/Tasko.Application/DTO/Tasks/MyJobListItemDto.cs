@@ -16,6 +16,7 @@ public sealed class MyJobListItemDto
 
     public int LocationType { get; init; }
     public string CustomerName { get; init; } = string.Empty;
-
-    public DateTime StartedAtUtc { get; init; }
+    public DateTime? AssignedAtUtc { get; init; }
+    public DateTime? StartedAtUtc { get; init; }
+    public DateTime? CompletedAtUtc { get; init; }
 }

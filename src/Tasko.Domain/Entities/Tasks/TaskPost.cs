@@ -27,11 +27,15 @@ public sealed class TaskPost
     public decimal? Budget { get; private set; }
     public string? PreferredTime { get; private set; }
     public int ViewsCount { get; private set; }
+
+    public DateTime? PublishedAtUtc { get; private set; }
+    public DateTime? AssignedAtUtc { get; private set; }
+    public DateTime? StartedAtUtc { get; private set; }
+    public DateTime? CompletedAtUtc { get; private set; }
     public void IncrementViewsCount() => ViewsCount++;
 
     public TaskStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
-    public DateTime? PublishedAtUtc { get; private set; }
     public long CategoryId { get; private set; }
     public Category Category { get; private set; } = null!;
     public LocationType LocationType { get; private set; } = LocationType.AllCity;
@@ -50,7 +54,7 @@ public sealed class TaskPost
         if (Status != TaskStatus.Draft)
             throw new InvalidOperationException("Task is not in Draft.");
 
-        Status = TaskStatus.Published; 
+        Status = TaskStatus.Published;
         PublishedAtUtc = DateTime.UtcNow;
     }
 
@@ -89,6 +93,7 @@ public sealed class TaskPost
             throw new InvalidOperationException("Task is not Published.");
 
         AssignedToUserId = executorUserId;
+        AssignedAtUtc = DateTime.UtcNow;
         Status = TaskStatus.Assigned;
     }
 
@@ -100,6 +105,7 @@ public sealed class TaskPost
         if (AssignedToUserId is null)
             throw new InvalidOperationException("Task has no assigned executor.");
 
+        StartedAtUtc = DateTime.UtcNow;
         Status = TaskStatus.InProgress;
     }
 
@@ -108,6 +114,7 @@ public sealed class TaskPost
         if (Status != TaskStatus.InProgress)
             throw new InvalidOperationException("Task is not InProgress.");
 
+        CompletedAtUtc = DateTime.UtcNow;
         Status = TaskStatus.Completed;
     }
 

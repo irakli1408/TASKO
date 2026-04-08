@@ -127,6 +127,8 @@ export function MyJobsView() {
               <div className="grid gap-4 xl:grid-cols-2">
                 {filteredJobs.map((job) => {
                   const normalizedStatus = normalizeJobStatus(job.status);
+                  const timelineDate = getJobTimelineDate(job);
+                  const timelineLabel = getJobTimelineLabel(normalizedStatus, t);
 
                   return (
                     <article
@@ -167,7 +169,10 @@ export function MyJobsView() {
                       <div className="mt-4 grid gap-3 sm:grid-cols-3">
                         <JobMetaCard label={t("myJobs.category")} value={job.categoryName} />
                         <JobMetaCard label={t("myJobs.location")} value={getLocationLabel(job.locationType, t)} />
-                        <JobMetaCard label={t("myJobs.startedAt")} value={formatDate(job.startedAtUtc, locale)} />
+                        <JobMetaCard
+                          label={timelineLabel}
+                          value={timelineDate ? formatDate(timelineDate, locale) : t("myJobs.notStartedYet")}
+                        />
                       </div>
 
                       {job.preferredTime?.trim() ? (
@@ -247,6 +252,26 @@ function getJobStatusLabel(status: JobStatus, t: (key: string) => string) {
   if (status === "completed") return t("task.statusCompleted");
   if (status === "inprogress") return t("task.statusInProgress");
   return t("task.statusAssigned");
+}
+
+function getJobTimelineLabel(status: JobStatus, t: (key: string) => string) {
+  if (status === "completed") return t("myJobs.completedAt");
+  if (status === "inprogress") return t("myJobs.startedAt");
+  return t("myJobs.assignedAt");
+}
+
+function getJobTimelineDate(job: MyJobItem): string | null {
+  const status = normalizeJobStatus(job.status);
+
+  if (status === "completed") {
+    return job.completedAtUtc ?? job.startedAtUtc ?? job.assignedAtUtc;
+  }
+
+  if (status === "inprogress") {
+    return job.startedAtUtc ?? job.assignedAtUtc;
+  }
+
+  return job.assignedAtUtc;
 }
 
 function normalizeJobStatus(status: string): JobStatus {

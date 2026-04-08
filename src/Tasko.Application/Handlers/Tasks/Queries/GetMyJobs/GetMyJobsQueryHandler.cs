@@ -64,7 +64,9 @@ public sealed class GetMyJobsQueryHandler : IRequestHandler<GetMyJobsQuery, IRea
                     CategoryName = x.category.Name,
                     LocationType = (int)x.task.LocationType,
                     CustomerName = $"{user.FirstName} {user.LastName}".Trim(),
-                    StartedAtUtc = x.task.PublishedAtUtc ?? x.task.CreatedAtUtc
+                    AssignedAtUtc = x.task.AssignedAtUtc,
+                    StartedAtUtc = x.task.StartedAtUtc,
+                    CompletedAtUtc = x.task.CompletedAtUtc
                 }
             )
             .ToListAsync(ct);

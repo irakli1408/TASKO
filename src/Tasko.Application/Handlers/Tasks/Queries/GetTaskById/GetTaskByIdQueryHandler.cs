@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.Abstractions.Services;
+using Tasko.Application.DTO.Rating;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
 using Tasko.Domain.Entities.Accounts.Users;
@@ -93,6 +94,21 @@ public sealed class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, 
             ? participants.FirstOrDefault(x => x.Id == task.AssignedToUserId.Value)
             : null;
 
+        var review = await _db.Reviews
+            .AsNoTracking()
+            .Where(x => x.TaskId == task.Id)
+            .Select(x => new ReviewDto
+            {
+                Id = x.Id,
+                TaskId = x.TaskId,
+                FromUserId = x.FromUserId,
+                ToUserId = x.ToUserId,
+                Score = x.Score,
+                Comment = x.Comment,
+                CreatedAtUtc = x.CreatedAtUtc
+            })
+            .FirstOrDefaultAsync(ct);
+
         return new TaskDetailsDto
         {
             Id = task.Id,
@@ -112,7 +128,8 @@ public sealed class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, 
             Status = (int)task.Status,
 
             CreatedAtUtc = task.CreatedAtUtc,
-            ViewsCount = viewsCount
+            ViewsCount = viewsCount,
+            Review = review
         };
     }
 }

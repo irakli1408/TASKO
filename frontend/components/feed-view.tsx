@@ -393,7 +393,7 @@ function TaskCard({
   const visual = getTaskVisual(index);
 
   return (
-    <article className="tasko-card overflow-hidden p-0">
+    <article className="tasko-card flex h-full flex-col overflow-hidden p-0">
       <div className={`relative h-44 ${visual.bannerClass} p-4 text-white`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_34%)]" />
         <div className="relative flex items-start justify-between gap-3">
@@ -412,7 +412,7 @@ function TaskCard({
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="flex items-center gap-3 text-xs text-[var(--tasko-muted)]">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef4ff] text-sm font-semibold text-[#2563eb]">
             {getInitials(task.createdByFirstName, task.createdByLastName)}
@@ -430,11 +430,13 @@ function TaskCard({
             "Исполнитель увидит описание задачи, бюджет и сможет отправить свое предложение."}
         </p>
 
-        {task.preferredTime?.trim() ? (
-          <div className="mt-3 inline-flex rounded-full border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-3 py-1.5 text-xs font-semibold text-[#315294]">
-            {t("task.preferredTime")}: {task.preferredTime}
-          </div>
-        ) : null}
+        <div className="mt-3 min-h-[36px]">
+          {task.preferredTime?.trim() ? (
+            <div className="inline-flex rounded-full border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-3 py-1.5 text-xs font-semibold text-[#315294]">
+              {t("task.preferredTime")}: {task.preferredTime}
+            </div>
+          ) : null}
+        </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-[18px] bg-[#f8fbff] p-3">
           <div className="rounded-[14px] bg-white px-3 py-2.5">
@@ -449,7 +451,7 @@ function TaskCard({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-auto grid gap-2 pt-4 sm:grid-cols-2">
           <Link
             href={`/tasks/${task.id}`}
             className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-[#d9e4f5] bg-[#fbfdff] px-4 text-center text-[13px] font-semibold text-[#17325c] transition hover:border-[#bfd4f4] hover:bg-[#f4f8ff]"

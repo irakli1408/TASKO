@@ -788,6 +788,9 @@ video {
 .mt-8 {
   margin-top: 2rem;
 }
+.mt-auto {
+  margin-top: auto;
+}
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
@@ -893,6 +896,9 @@ video {
 }
 .min-h-\[360px\] {
   min-height: 360px;
+}
+.min-h-\[36px\] {
+  min-height: 36px;
 }
 .min-h-\[42px\] {
   min-height: 42px;
@@ -2197,6 +2203,9 @@ video {
 }
 .pt-2 {
   padding-top: 0.5rem;
+}
+.pt-4 {
+  padding-top: 1rem;
 }
 .pt-5 {
   padding-top: 1.25rem;

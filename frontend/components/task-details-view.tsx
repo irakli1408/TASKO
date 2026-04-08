@@ -81,6 +81,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
       ]);
 
       setTask(taskDetails);
+      setCreatedReview(taskDetails.review ?? null);
       setImages(taskImages);
       setOffers(taskOffers);
 
@@ -197,6 +198,7 @@ export function TaskDetailsView({ taskId }: TaskDetailsViewProps) {
     ]);
 
     setTask(taskDetails);
+    setCreatedReview(taskDetails.review ?? null);
     setOffers(taskOffers);
     setImages(taskImages);
 

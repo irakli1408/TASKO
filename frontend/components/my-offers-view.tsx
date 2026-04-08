@@ -40,7 +40,7 @@ export function MyOffersView() {
         const data = await getMyOffers(token);
         setOffers(data);
       } catch (loadError) {
-        setError(getErrorMessage(loadError, t("task.loadError")));
+        setError(getErrorMessage(loadError, t("myOffers.loadError")));
       } finally {
         setLoading(false);
       }

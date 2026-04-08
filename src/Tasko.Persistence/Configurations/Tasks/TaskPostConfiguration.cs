@@ -18,7 +18,10 @@ public sealed class TaskPostConfiguration : IEntityTypeConfiguration<TaskPost>
         e.Property(x => x.Description).HasMaxLength(4000);
         e.Property(x => x.Budget).HasColumnType("decimal(18,2)");
         e.Property(x => x.PreferredTime).HasMaxLength(120);
-
+        e.Property(x => x.PublishedAtUtc);
+        e.Property(x => x.AssignedAtUtc);
+        e.Property(x => x.StartedAtUtc);
+        e.Property(x => x.CompletedAtUtc);
         e.Property(x => x.Status).IsRequired();
         e.Property(x => x.CreatedAtUtc).IsRequired();
 
@@ -37,7 +40,6 @@ public sealed class TaskPostConfiguration : IEntityTypeConfiguration<TaskPost>
             .HasForeignKey(x => x.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ✅ индексы под feed и основные запросы
         e.HasIndex(x => new { x.Status, x.CategoryId, x.LocationType, x.CreatedAtUtc });
         e.HasIndex(x => x.CreatedByUserId);
         e.HasIndex(x => x.AssignedToUserId);
