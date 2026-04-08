@@ -51,6 +51,16 @@ export type ExecutorPublicProfile = {
   categoryIds: number[];
 };
 
+export type ExecutorReviewItem = {
+  id: number;
+  taskId: number;
+  fromUserId: number;
+  fromUserName: string;
+  score: number;
+  comment: string | null;
+  createdAtUtc: string;
+};
+
 export type UpdateProfilePayload = {
   firstName: string;
   lastName: string;
@@ -67,6 +77,22 @@ export async function getMyProfile(token: string) {
 
 export async function getExecutorPublicProfile(executorId: number) {
   return apiFetch<ExecutorPublicProfile>(`/Profile/${executorId}`);
+}
+
+export async function getExecutorReviews(executorId: number, options: { skip?: number; take?: number } = {}) {
+  const query = new URLSearchParams();
+
+  if (options.skip !== undefined) {
+    query.set("skip", String(options.skip));
+  }
+
+  if (options.take !== undefined) {
+    query.set("take", String(options.take));
+  }
+
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+
+  return apiFetch<ExecutorReviewItem[]>(`/Reviews/executor/${executorId}${suffix}`);
 }
 
 export async function updateMyProfile(token: string, payload: UpdateProfilePayload) {

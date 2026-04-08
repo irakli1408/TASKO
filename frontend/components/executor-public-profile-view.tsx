@@ -9,10 +9,12 @@ import { useI18n } from "@/components/i18n-provider";
 import { resolveAssetUrl } from "@/lib/api";
 import {
   Category,
+  ExecutorReviewItem,
   ExecutorPublicProfile,
   getCategories,
   getErrorMessage,
-  getExecutorPublicProfile
+  getExecutorPublicProfile,
+  getExecutorReviews
 } from "@/lib/profile";
 import { LocationType } from "@/lib/auth";
 
@@ -25,6 +27,7 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
   const { status, getAccessToken } = useAuth();
   const { locale, t } = useI18n();
   const [profile, setProfile] = useState<ExecutorPublicProfile | null>(null);
+  const [reviews, setReviews] = useState<ExecutorReviewItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,13 +49,15 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
           return;
         }
 
-        const [publicProfile, categoryList] = await Promise.all([
+        const [publicProfile, categoryList, reviewList] = await Promise.all([
           getExecutorPublicProfile(executorId),
-          getCategories(token).catch(() => [])
+          getCategories(token).catch(() => []),
+          getExecutorReviews(executorId, { take: 10 }).catch(() => [])
         ]);
 
         setProfile(publicProfile);
         setCategories(categoryList);
+        setReviews(reviewList);
       } catch (loadError) {
         setError(getErrorMessage(loadError, t("executorProfile.loadError")));
       } finally {
@@ -199,6 +204,55 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
                 )}
               </div>
             </article>
+
+            <article className="tasko-card p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
+                    {t("executorProfile.reviewsLabel")}
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                    {t("executorProfile.reviewsTitle")}
+                  </h3>
+                </div>
+                <span className="tasko-pill">
+                  {reviews.length} {t("executorProfile.reviews")}
+                </span>
+              </div>
+
+              <div className="mt-5 grid gap-4">
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
+                    <article
+                      key={review.id}
+                      className="rounded-[1.6rem] border border-[#dfe7f3] bg-[#fbfdff] p-5 shadow-[0_12px_26px_rgba(42,78,148,0.05)]"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--tasko-text)]">
+                            {review.fromUserName || t("profile.unknown")}
+                          </p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#8ba0c3]">
+                            {formatReviewDate(review.createdAtUtc, locale)}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-[#fff6dd] px-3 py-1.5 text-sm font-semibold text-[#a46d00]">
+                          {renderStars(review.score)}
+                        </span>
+                      </div>
+
+                      <p className="mt-4 text-sm leading-7 tasko-muted">
+                        {review.comment?.trim() || t("task.reviewNoComment")}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <div className="tasko-soft-card p-4 text-sm tasko-muted">
+                    {t("executorProfile.noReviews")}
+                  </div>
+                )}
+              </div>
+            </article>
           </section>
 
           <aside className="grid content-start gap-6">
@@ -305,4 +359,18 @@ function formatRating(ratingAverage: number, ratingCount: number, t: (key: strin
   }
 
   return `${ratingAverage.toFixed(1)} / 5 (${ratingCount})`;
+}
+
+function renderStars(score: number) {
+  return "★".repeat(score) + "☆".repeat(Math.max(0, 5 - score));
+}
+
+function formatReviewDate(value: string, locale: string) {
+  const date = new Date(value);
+
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(date);
 }

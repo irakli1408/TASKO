@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { resolveHomePath, useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
 import { ApiError } from "@/lib/api";
 import { LogoLink } from "@/components/logo-link";
@@ -61,7 +61,7 @@ export function AuthCard({ mode }: AuthCardProps) {
 
   useEffect(() => {
     if (status === "authenticated" && user) {
-      router.replace(resolveHomePath(user));
+      router.replace("/");
     }
   }, [router, status, user]);
 
@@ -86,7 +86,7 @@ export function AuthCard({ mode }: AuthCardProps) {
             password: form.password
           });
 
-      router.replace(resolveHomePath(currentUser));
+      router.replace("/");
     } catch (submitError) {
       setError(getFriendlyError(submitError, t));
     } finally {
