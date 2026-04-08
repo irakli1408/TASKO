@@ -1,10 +1,7 @@
 {
   "/login/page": "app/login/page.js",
-  "/jobs/mine/page": "app/jobs/mine/page.js",
   "/offers/mine/page": "app/offers/mine/page.js",
+  "/jobs/mine/page": "app/jobs/mine/page.js",
   "/tasks/[taskId]/page": "app/tasks/[taskId]/page.js",
-  "/tasks/mine/page": "app/tasks/mine/page.js",
-  "/tasks/create/page": "app/tasks/create/page.js",
-  "/page": "app/page.js",
-  "/notifications/page": "app/notifications/page.js"
+  "/tasks/mine/page": "app/tasks/mine/page.js"
 }

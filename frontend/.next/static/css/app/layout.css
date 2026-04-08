@@ -3034,6 +3034,7 @@ body {
   background: var(--tasko-bg);
   color: var(--tasko-text);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-y: scroll;
 }
 
 * {
