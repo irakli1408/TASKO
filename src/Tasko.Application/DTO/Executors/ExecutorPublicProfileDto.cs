@@ -8,6 +8,7 @@ public sealed class ExecutorPublicProfileDto
 
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
+    public string Phone { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
     public string? About { get; set; }
 

@@ -37,6 +37,9 @@ public sealed class TaskoDbContext : DbContext, ITaskoDbContext
 
     public DbSet<Review> Reviews => Set<Review>();
 
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TaskoDbContext).Assembly);

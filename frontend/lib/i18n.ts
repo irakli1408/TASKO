@@ -39,6 +39,7 @@ const en: Dictionary = {
   "executorProfile.loading": "Loading executor profile...",
   "executorProfile.loadError": "Could not load this executor profile.",
   "executorProfile.location": "Location",
+  "executorProfile.phone": "Phone",
   "executorProfile.experience": "Experience",
   "executorProfile.rating": "Rating",
   "executorProfile.reviewsLabel": "Reviews",
@@ -638,7 +639,7 @@ const en: Dictionary = {
   "createTask.descriptionPlaceholder":
     "Explain what needs to be done, timing, materials, and any access details.",
   "createTask.preferredTime": "Preferred time",
-  "createTask.preferredTimePlaceholder": "For example: today after 18:00",
+  "createTask.preferredTimePlaceholder": "For example: 15:00",
   "createTask.updating": "Updating...",
   "createTask.creating": "Creating...",
   "createTask.updateDraft": "Update draft",
@@ -686,6 +687,7 @@ const en: Dictionary = {
   "myTasks.created": "Created",
   "myTasks.assignedExecutor": "Assigned executor",
   "myTasks.notAssigned": "Not assigned",
+  "myTasks.expiredByTime": "Preferred time window has ended, so this task is no longer shown to executors in the feed.",
   "myTasks.openDetails": "Open details",
   "myTasks.continueEditing": "Continue editing"
 };
@@ -722,6 +724,7 @@ const ru: Dictionary = {
   "executorProfile.loading": "Загружаем профиль мастера...",
   "executorProfile.loadError": "Не удалось загрузить профиль мастера.",
   "executorProfile.location": "Локация",
+  "executorProfile.phone": "Телефон",
   "executorProfile.experience": "Опыт",
   "executorProfile.rating": "Рейтинг",
   "executorProfile.reviewsLabel": "Отзывы",
@@ -1299,7 +1302,7 @@ const ru: Dictionary = {
   "createTask.descriptionLabel": "Описание",
   "createTask.descriptionPlaceholder": "Объясни, что нужно сделать, сроки, материалы и любые детали по доступу.",
   "createTask.preferredTime": "Желаемое время",
-  "createTask.preferredTimePlaceholder": "Например: сегодня после 18:00",
+  "createTask.preferredTimePlaceholder": "Например: 15:00",
   "createTask.updating": "Обновляем...",
   "createTask.creating": "Создаем...",
   "createTask.updateDraft": "Обновить черновик",
@@ -1342,6 +1345,7 @@ const ru: Dictionary = {
   "myTasks.created": "Создано",
   "myTasks.assignedExecutor": "Назначенный мастер",
   "myTasks.notAssigned": "Не назначен",
+  "myTasks.expiredByTime": "Окно желаемого времени уже прошло, поэтому задача больше не показывается мастерам в ленте.",
   "myTasks.openDetails": "Открыть детали",
   "myTasks.continueEditing": "Продолжить редактирование"
 };

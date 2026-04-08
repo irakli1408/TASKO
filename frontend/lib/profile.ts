@@ -42,6 +42,7 @@ export type ExecutorPublicProfile = {
   id: number;
   firstName: string;
   lastName: string;
+  phone: string;
   avatarUrl: string | null;
   about: string | null;
   ratingAverage: number;
@@ -75,8 +76,10 @@ export async function getMyProfile(token: string) {
   });
 }
 
-export async function getExecutorPublicProfile(executorId: number) {
-  return apiFetch<ExecutorPublicProfile>(`/Profile/${executorId}`);
+export async function getExecutorPublicProfile(executorId: number, token?: string) {
+  return apiFetch<ExecutorPublicProfile>(`/Profile/${executorId}`, {
+    token
+  });
 }
 
 export async function getExecutorReviews(executorId: number, options: { skip?: number; take?: number } = {}) {

@@ -1,5 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Tasko.Application.Abstractions.Persistence;
 using Tasko.Application.DTO.Tasks;
 using Tasko.Common.CurrentState;
@@ -28,7 +30,6 @@ public sealed class GetTaskFeedQueryHandler
         var skip = request.Skip < 0 ? 0 : request.Skip;
         var take = request.Take is < 1 or > 200 ? 50 : request.Take;
 
-        // (опционально) проверка, что это реально мастер
         var canUseFeed = await _db.Users.AsNoTracking()
             .AnyAsync(u => u.Id == userId
                            && u.IsActive
@@ -38,7 +39,6 @@ public sealed class GetTaskFeedQueryHandler
         if (!canUseFeed)
             throw new UnauthorizedAccessException("Only active executors can use feed.");
 
-        // Один запрос: Published + category in executor categories
         var q =
             from t in _db.Tasks.AsNoTracking()
             join ec in _db.ExecutorCategories.AsNoTracking()
@@ -48,7 +48,6 @@ public sealed class GetTaskFeedQueryHandler
                   && t.CreatedByUserId != userId
             select t;
 
-        // Фильтр по локации (показываем район + AllCity)
         if (request.LocationType is not null)
         {
             var loc = request.LocationType.Value;
@@ -59,10 +58,8 @@ public sealed class GetTaskFeedQueryHandler
                 q = q.Where(t => t.LocationType == loc);
         }
 
-        var items = await q
-            .OrderByDescending(x => x.CreatedAtUtc)
-            .Skip(skip)
-            .Take(take)
+        var candidates = await q
+            .OrderByDescending(x => x.PublishedAtUtc ?? x.CreatedAtUtc)
             .Join(
                 _db.Users.AsNoTracking(),
                 task => task.CreatedByUserId,
@@ -84,6 +81,67 @@ public sealed class GetTaskFeedQueryHandler
                 })
             .ToListAsync(ct);
 
+        var nowLocal = ConvertToTbilisi(DateTime.UtcNow);
+
+        var items = candidates
+            .Where(x => !IsExpiredByPreferredTime(x.PreferredTime, x.PublishedAtUtc ?? x.CreatedAtUtc, nowLocal))
+            .Skip(skip)
+            .Take(take)
+            .ToList();
+
         return items;
+    }
+
+    private static bool IsExpiredByPreferredTime(string? preferredTime, DateTime referenceUtc, DateTime nowLocal)
+    {
+        if (!TryExtractTime(preferredTime, out var scheduledTime))
+        {
+            return false;
+        }
+
+        var referenceLocal = ConvertToTbilisi(referenceUtc);
+        var deadline = referenceLocal.Date.Add(scheduledTime).AddHours(3);
+
+        return nowLocal > deadline;
+    }
+
+    private static bool TryExtractTime(string? input, out TimeSpan time)
+    {
+        time = default;
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        var normalized = input.Trim();
+        var match = Regex.Match(normalized, @"(?<!\d)(?<hour>\d{1,2})[:.](?<minute>\d{2})(?!\d)");
+
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var candidate = $"{match.Groups["hour"].Value}:{match.Groups["minute"].Value}";
+
+        return TimeSpan.TryParseExact(candidate, @"h\:mm", CultureInfo.InvariantCulture, out time)
+               || TimeSpan.TryParseExact(candidate, @"hh\:mm", CultureInfo.InvariantCulture, out time);
+    }
+
+    private static DateTime ConvertToTbilisi(DateTime utc)
+    {
+        try
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Georgian Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return DateTime.SpecifyKind(utc, DateTimeKind.Utc).AddHours(4);
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return DateTime.SpecifyKind(utc, DateTimeKind.Utc).AddHours(4);
+        }
     }
 }

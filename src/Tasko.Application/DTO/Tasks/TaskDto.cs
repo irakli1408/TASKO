@@ -17,4 +17,5 @@ public sealed class TaskDto
     public Tasko.Domain.Entities.Accounts.Users.LocationType LocationType { get; init; }
     public string Status { get; init; } = null!;
     public DateTime CreatedAtUtc { get; init; }
+    public DateTime? PublishedAtUtc { get; init; }
 }

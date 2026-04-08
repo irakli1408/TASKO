@@ -53,7 +53,8 @@ public sealed class GetMyTasksQueryHandler : IRequestHandler<GetMyTasksQuery, IR
                 CategoryId = x.task.CategoryId,
                 LocationType = x.task.LocationType,
                 Status = x.task.Status.ToString(),
-                CreatedAtUtc = x.task.CreatedAtUtc
+                CreatedAtUtc = x.task.CreatedAtUtc,
+                PublishedAtUtc = x.task.PublishedAtUtc
             })
             .ToListAsync(ct);
     }

@@ -89,36 +89,27 @@ export function MyTasksView() {
           ) : (
             <div className="mt-5 space-y-4">
               {tasks.map((task) => (
-                <article key={task.id} className={`tasko-soft-card rounded-[1.8rem] p-5 ${getTaskToneClass(task.status)}`}>
-                  <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
+                <article key={task.id} className={`tasko-soft-card rounded-[1.8rem] p-4 ${getTaskToneClass(task.status)}`}>
+                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_228px]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="tasko-pill">{getTaskStatusLabel(task.status, t)}</span>
                       </div>
-                      <h3 className="mt-3 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                      <h3 className="mt-2.5 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
                         {task.title}
                       </h3>
-                      <p className="mt-3 max-w-3xl text-sm leading-7 tasko-muted">
+                      <p className="mt-2 max-w-3xl text-sm leading-6.5 tasko-muted">
                         {task.description?.trim() || t("myTasks.noDescription")}
                       </p>
 
-                      <div className="mt-5 flex flex-wrap gap-2.5">
-                        <Link
-                          href={`/tasks/${task.id}`}
-                          className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9e4f5] bg-[#fbfdff] px-4 text-[13px] font-semibold text-[#17325c] transition hover:border-[#bfd4f4] hover:bg-[#f4f8ff]"
-                        >
-                          {t("myTasks.openDetails")}
-                        </Link>
-                        <Link
-                          href={`/tasks/create?taskId=${task.id}`}
-                          className="inline-flex h-10 items-center justify-center rounded-full border border-[#dbe7ff] bg-[#eef4ff] px-4 text-[13px] font-semibold text-[#2563eb] transition hover:bg-[#e5efff]"
-                        >
-                          {t("myTasks.continueEditing")}
-                        </Link>
-                      </div>
+                      {isTaskExpiredByPreferredTime(task) ? (
+                        <div className="mt-4 inline-flex max-w-3xl rounded-full border border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.10)] px-4 py-2 text-sm font-semibold text-[#9a6700]">
+                          {t("myTasks.expiredByTime")}
+                        </div>
+                      ) : null}
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
                       <div className="rounded-[1.4rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("feed.budget")}
@@ -158,6 +149,21 @@ export function MyTasksView() {
                         </p>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="mt-3.5 flex flex-wrap gap-2.5 border-t border-[rgba(148,163,184,0.14)] pt-3.5">
+                    <Link
+                      href={`/tasks/${task.id}`}
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9e4f5] bg-[#fbfdff] px-4 text-[13px] font-semibold text-[#17325c] transition hover:border-[#bfd4f4] hover:bg-[#f4f8ff]"
+                    >
+                      {t("myTasks.openDetails")}
+                    </Link>
+                    <Link
+                      href={`/tasks/create?taskId=${task.id}`}
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-[#dbe7ff] bg-[#eef4ff] px-4 text-[13px] font-semibold text-[#2563eb] transition hover:bg-[#e5efff]"
+                    >
+                      {t("myTasks.continueEditing")}
+                    </Link>
                   </div>
                 </article>
               ))}
@@ -255,4 +261,55 @@ function getTaskToneClass(status: string) {
   }
 
   return "";
+}
+
+function isTaskExpiredByPreferredTime(task: TaskRecord) {
+  const normalizedStatus = task.status.trim().toLowerCase();
+
+  if (normalizedStatus !== "published") {
+    return false;
+  }
+
+  const preferredTime = parsePreferredTime(task.preferredTime);
+
+  if (!preferredTime) {
+    return false;
+  }
+
+  const referenceDate = new Date(task.publishedAtUtc ?? task.createdAtUtc);
+
+  if (Number.isNaN(referenceDate.getTime())) {
+    return false;
+  }
+
+  const deadline = new Date(referenceDate);
+  deadline.setHours(preferredTime.hours, preferredTime.minutes, 0, 0);
+  deadline.setHours(deadline.getHours() + 3);
+
+  return Date.now() > deadline.getTime();
+}
+
+function parsePreferredTime(value: string | null) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return null;
+  }
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return { hours, minutes };
 }

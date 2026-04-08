@@ -16,6 +16,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
+    "/tasks/mine/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/tasks/mine/page.js"
+    ],
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -26,35 +31,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/login/page.js"
     ],
-    "/feed/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/feed/page.js"
-    ],
-    "/profile/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/profile/page.js"
-    ],
-    "/tasks/mine/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/tasks/mine/page.js"
-    ],
     "/jobs/mine/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/jobs/mine/page.js"
     ],
-    "/tasks/[taskId]/page": [
+    "/profile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tasks/[taskId]/page.js"
-    ],
-    "/executors/[executorId]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/executors/[executorId]/page.js"
+      "static/chunks/app/profile/page.js"
     ]
   }
 }

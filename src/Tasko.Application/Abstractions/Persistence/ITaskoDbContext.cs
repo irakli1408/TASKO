@@ -35,6 +35,7 @@ public interface ITaskoDbContext
     DbSet<PasswordResetToken> PasswordResetTokens { get; }
 
     DbSet<Review> Reviews { get; }
+    DbSet<NotificationPreference> NotificationPreferences { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

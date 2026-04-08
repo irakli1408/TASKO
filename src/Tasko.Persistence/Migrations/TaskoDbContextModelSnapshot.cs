@@ -427,6 +427,31 @@ namespace Tasko.Persistence.Migrations
                     b.ToTable("Notifications", (string)null);
                 });
 
+            modelBuilder.Entity("Tasko.Domain.Entities.Notifications.NotificationPreference", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("NotifyMarketplaceUpdates")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyNewMessages")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyNewOffers")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyTaskAssigned")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyTaskCompleted")
+                        .HasColumnType("bit");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("NotificationPreferences", (string)null);
+                });
+
             modelBuilder.Entity("Tasko.Domain.Entities.Rating.Review", b =>
                 {
                     b.Property<long>("Id")
@@ -677,6 +702,17 @@ namespace Tasko.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("File");
+                });
+
+            modelBuilder.Entity("Tasko.Domain.Entities.Notifications.NotificationPreference", b =>
+                {
+                    b.HasOne("Tasko.Domain.Entities.Accounts.Users.User", "User")
+                        .WithOne()
+                        .HasForeignKey("Tasko.Domain.Entities.Notifications.NotificationPreference", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Tasko.Domain.Entities.Tasks.TaskPost", b =>

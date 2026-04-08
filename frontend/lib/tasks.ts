@@ -30,6 +30,7 @@ export type TaskRecord = {
   locationType: LocationType;
   status: string;
   createdAtUtc: string;
+  publishedAtUtc: string | null;
 };
 
 export type TaskDetails = {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,24 +34,15 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
 
   useEffect(() => {
     async function loadProfile() {
-      if (status !== "authenticated") {
-        return;
-      }
-
       setLoading(true);
       setError("");
 
       try {
         const token = await getAccessToken();
 
-        if (!token) {
-          router.replace("/login");
-          return;
-        }
-
         const [publicProfile, categoryList, reviewList] = await Promise.all([
-          getExecutorPublicProfile(executorId),
-          getCategories(token).catch(() => []),
+          getExecutorPublicProfile(executorId, token ?? undefined),
+          token ? getCategories(token).catch(() => []) : Promise.resolve([]),
           getExecutorReviews(executorId, { take: 10 }).catch(() => [])
         ]);
 
@@ -66,7 +57,7 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
     }
 
     void loadProfile();
-  }, [executorId, getAccessToken, router, status, t]);
+  }, [executorId, getAccessToken, status, t]);
 
   const categoryNames = useMemo(() => {
     if (!profile) {
@@ -112,6 +103,7 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <ProfilePill label={t("executorProfile.location")} value={getLocationLabel(profile.locationType, t)} />
+                      <ProfilePill label={t("executorProfile.phone")} value={profile.phone || t("task.notSet")} />
                       <ProfilePill
                         label={t("executorProfile.experience")}
                         value={formatExperience(profile.experienceYears, t)}
@@ -159,6 +151,7 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
                   </p>
                   <div className="mt-4 grid gap-3">
                     <MetricCard label={t("executorProfile.location")} value={getLocationLabel(profile.locationType, t)} />
+                    <MetricCard label={t("executorProfile.phone")} value={profile.phone || t("task.notSet")} />
                     <MetricCard
                       label={t("executorProfile.experience")}
                       value={formatExperience(profile.experienceYears, t)}
@@ -267,6 +260,7 @@ export function ExecutorPublicProfileView({ executorId }: ExecutorPublicProfileV
               <div className="mt-5 grid gap-3">
                 <MetricCard label={t("executorProfile.rating")} value={formatRating(profile.ratingAverage, profile.ratingCount, t)} />
                 <MetricCard label={t("executorProfile.location")} value={getLocationLabel(profile.locationType, t)} />
+                <MetricCard label={t("executorProfile.phone")} value={profile.phone || t("task.notSet")} />
                 <MetricCard label={t("executorProfile.experience")} value={formatExperience(profile.experienceYears, t)} />
               </div>
 
@@ -374,3 +368,4 @@ function formatReviewDate(value: string, locale: string) {
     year: "numeric"
   }).format(date);
 }
+

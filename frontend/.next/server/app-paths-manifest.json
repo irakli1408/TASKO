@@ -1,10 +1,7 @@
 {
+  "/tasks/mine/page": "app/tasks/mine/page.js",
   "/page": "app/page.js",
   "/login/page": "app/login/page.js",
-  "/feed/page": "app/feed/page.js",
-  "/profile/page": "app/profile/page.js",
-  "/tasks/mine/page": "app/tasks/mine/page.js",
   "/jobs/mine/page": "app/jobs/mine/page.js",
-  "/tasks/[taskId]/page": "app/tasks/[taskId]/page.js",
-  "/executors/[executorId]/page": "app/executors/[executorId]/page.js"
+  "/profile/page": "app/profile/page.js"
 }

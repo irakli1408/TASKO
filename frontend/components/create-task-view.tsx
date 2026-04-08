@@ -490,6 +490,7 @@ export function CreateTaskView() {
                   <label className="space-y-2">
                     <span className="tasko-label">{t("createTask.preferredTime")}</span>
                     <input
+                      type="time"
                       value={form.preferredTime}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, preferredTime: event.target.value }))
