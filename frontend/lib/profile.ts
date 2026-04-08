@@ -62,6 +62,14 @@ export type ExecutorReviewItem = {
   createdAtUtc: string;
 };
 
+export type NotificationPreferencesDto = {
+  notifyNewOffers: boolean;
+  notifyTaskAssigned: boolean;
+  notifyNewMessages: boolean;
+  notifyTaskCompleted: boolean;
+  notifyMarketplaceUpdates: boolean;
+};
+
 export type UpdateProfilePayload = {
   firstName: string;
   lastName: string;
@@ -96,6 +104,23 @@ export async function getExecutorReviews(executorId: number, options: { skip?: n
   const suffix = query.toString() ? `?${query.toString()}` : "";
 
   return apiFetch<ExecutorReviewItem[]>(`/Reviews/executor/${executorId}${suffix}`);
+}
+
+export async function getMyNotificationPreferences(token: string) {
+  return apiFetch<NotificationPreferencesDto>("/Profile/me/preferences", {
+    token
+  });
+}
+
+export async function updateMyNotificationPreferences(
+  token: string,
+  payload: NotificationPreferencesDto
+) {
+  return apiFetch<NotificationPreferencesDto>("/Profile/me/preferences/update", {
+    method: "PUT",
+    token,
+    body: payload
+  });
 }
 
 export async function updateMyProfile(token: string, payload: UpdateProfilePayload) {

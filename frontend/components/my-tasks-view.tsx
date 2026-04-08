@@ -89,28 +89,27 @@ export function MyTasksView() {
           ) : (
             <div className="mt-5 space-y-4">
               {tasks.map((task) => (
-                <article key={task.id} className={`tasko-soft-card rounded-[1.8rem] p-4 ${getTaskToneClass(task.status)}`}>
-                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_228px]">
+                <article key={task.id} className={`tasko-soft-card rounded-[1.9rem] p-4 shadow-[0_14px_30px_rgba(42,78,148,0.05)] ${getTaskToneClass(task.status)}`}>
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_214px]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="tasko-pill">{getTaskStatusLabel(task.status, t)}</span>
+                        {isTaskExpiredByPreferredTime(task) ? (
+                          <div className="inline-flex rounded-full border border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.10)] px-3 py-1 text-xs font-semibold text-[#9a6700]">
+                            {t("myTasks.expiredByTime")}
+                          </div>
+                        ) : null}
                       </div>
-                      <h3 className="mt-2.5 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
+                      <h3 className="mt-3 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
                         {task.title}
                       </h3>
                       <p className="mt-2 max-w-3xl text-sm leading-6.5 tasko-muted">
                         {task.description?.trim() || t("myTasks.noDescription")}
                       </p>
-
-                      {isTaskExpiredByPreferredTime(task) ? (
-                        <div className="mt-4 inline-flex max-w-3xl rounded-full border border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.10)] px-4 py-2 text-sm font-semibold text-[#9a6700]">
-                          {t("myTasks.expiredByTime")}
-                        </div>
-                      ) : null}
                     </div>
 
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                      <div className="rounded-[1.4rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
+                      <div className="rounded-[1.35rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("feed.budget")}
                         </p>
@@ -118,7 +117,7 @@ export function MyTasksView() {
                           {task.budget !== null ? formatBudget(task.budget, locale) : t("task.notSet")}
                         </p>
                       </div>
-                      <div className="rounded-[1.4rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
+                      <div className="rounded-[1.35rem] border border-[rgba(59,130,246,0.14)] bg-[rgba(59,130,246,0.07)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("task.preferredTime")}
                         </p>
@@ -126,7 +125,7 @@ export function MyTasksView() {
                           {task.preferredTime?.trim() || t("task.notSet")}
                         </p>
                       </div>
-                      <div className="rounded-[1.4rem] border border-[rgba(34,197,94,0.14)] bg-[rgba(34,197,94,0.07)] px-4 py-3">
+                      <div className="rounded-[1.35rem] border border-[rgba(34,197,94,0.14)] bg-[rgba(34,197,94,0.07)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("myTasks.created")}
                         </p>
@@ -134,7 +133,7 @@ export function MyTasksView() {
                           {formatDate(task.createdAtUtc, locale, t)}
                         </p>
                       </div>
-                      <div className="rounded-[1.4rem] border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] px-4 py-3">
+                      <div className="rounded-[1.35rem] border border-[rgba(245,158,11,0.14)] bg-[rgba(245,158,11,0.08)] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                           {t("myTasks.assignedExecutor")}
                         </p>
@@ -151,7 +150,7 @@ export function MyTasksView() {
                     </div>
                   </div>
 
-                  <div className="mt-3.5 flex flex-wrap gap-2.5 border-t border-[rgba(148,163,184,0.14)] pt-3.5">
+                  <div className="mt-4 flex flex-wrap gap-2.5 border-t border-[rgba(148,163,184,0.14)] pt-3.5">
                     <Link
                       href={`/tasks/${task.id}`}
                       className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9e4f5] bg-[#fbfdff] px-4 text-[13px] font-semibold text-[#17325c] transition hover:border-[#bfd4f4] hover:bg-[#f4f8ff]"
@@ -177,9 +176,9 @@ export function MyTasksView() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="tasko-card p-5">
+    <div className="tasko-card rounded-[1.6rem] p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--tasko-text)]">{value}</p>
+      <p className="mt-3 text-[2rem] font-semibold tracking-tight text-[var(--tasko-text)]">{value}</p>
     </div>
   );
 }

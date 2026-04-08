@@ -111,8 +111,8 @@ export function LandingShellV3() {
 
   return (
     <main className="bg-[#F7F8FA] pb-0">
-      <div className="mx-auto max-w-[1280px] px-4 py-3 sm:px-6">
-        <header className="rounded-[14px] border border-[var(--tasko-border)] bg-white px-4 py-2 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-5">
+      <div className="tasko-shell py-5">
+        <header className="tasko-topbar mb-6 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1">
               <div className="scale-[0.8] origin-left">

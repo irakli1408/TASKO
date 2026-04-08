@@ -6,13 +6,42 @@ import { GuardedPage } from "@/components/guarded-page";
 import { useAuth } from "@/components/auth-provider";
 import { useI18n } from "@/components/i18n-provider";
 import {
-  NotificationPreferenceKey,
   NotificationPreferences,
-  defaultNotificationPreferences,
-  loadNotificationPreferences,
-  saveNotificationPreferences
+  NotificationPreferenceKey,
+  defaultNotificationPreferences
 } from "@/lib/settings-preferences";
+import {
+  getErrorMessage,
+  getMyNotificationPreferences,
+  updateMyNotificationPreferences
+} from "@/lib/profile";
 import { changePasswordRequest, getSettingsErrorMessage } from "@/lib/settings";
+
+function mapDtoToPreferences(dto: {
+  notifyNewOffers: boolean;
+  notifyTaskAssigned: boolean;
+  notifyNewMessages: boolean;
+  notifyTaskCompleted: boolean;
+  notifyMarketplaceUpdates: boolean;
+}): NotificationPreferences {
+  return {
+    offerReceived: dto.notifyNewOffers,
+    taskAssigned: dto.notifyTaskAssigned,
+    messageReceived: dto.notifyNewMessages,
+    taskCompleted: dto.notifyTaskCompleted,
+    marketplaceUpdates: dto.notifyMarketplaceUpdates
+  };
+}
+
+function mapPreferencesToDto(preferences: NotificationPreferences) {
+  return {
+    notifyNewOffers: preferences.offerReceived,
+    notifyTaskAssigned: preferences.taskAssigned,
+    notifyNewMessages: preferences.messageReceived,
+    notifyTaskCompleted: preferences.taskCompleted,
+    notifyMarketplaceUpdates: preferences.marketplaceUpdates
+  };
+}
 
 export function SettingsView() {
   const router = useRouter();
@@ -27,7 +56,10 @@ export function SettingsView() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [notificationError, setNotificationError] = useState("");
   const [notificationSuccess, setNotificationSuccess] = useState("");
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsSaving, setNotificationsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<
     "profile" | "security" | "language" | "notifications"
   >("security");
@@ -36,8 +68,46 @@ export function SettingsView() {
   );
 
   useEffect(() => {
-    setNotificationPreferences(loadNotificationPreferences());
-  }, []);
+    let active = true;
+
+    async function loadPreferences() {
+      setNotificationsLoading(true);
+      setNotificationError("");
+
+      try {
+        const token = await getAccessToken();
+
+        if (!token) {
+          router.replace("/login");
+          return;
+        }
+
+        const preferences = await getMyNotificationPreferences(token);
+
+        if (!active) {
+          return;
+        }
+
+        setNotificationPreferences(mapDtoToPreferences(preferences));
+      } catch (loadError) {
+        if (!active) {
+          return;
+        }
+
+        setNotificationError(getErrorMessage(loadError, t("settings.notificationsError")));
+      } finally {
+        if (active) {
+          setNotificationsLoading(false);
+        }
+      }
+    }
+
+    void loadPreferences();
+
+    return () => {
+      active = false;
+    };
+  }, [getAccessToken, router, t]);
 
   useEffect(() => {
     if (!notificationSuccess) {
@@ -114,11 +184,34 @@ export function SettingsView() {
       [key]: !current[key]
     }));
     setNotificationSuccess("");
+    setNotificationError("");
   }
 
-  function handleSaveNotificationPreferences() {
-    saveNotificationPreferences(notificationPreferences);
-    setNotificationSuccess(t("settings.notificationsSaved"));
+  async function handleSaveNotificationPreferences() {
+    setNotificationSuccess("");
+    setNotificationError("");
+    setNotificationsSaving(true);
+
+    try {
+      const token = await getAccessToken();
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      const updated = await updateMyNotificationPreferences(
+        token,
+        mapPreferencesToDto(notificationPreferences)
+      );
+
+      setNotificationPreferences(mapDtoToPreferences(updated));
+      setNotificationSuccess(t("settings.notificationsSaved"));
+    } catch (saveError) {
+      setNotificationError(getErrorMessage(saveError, t("settings.notificationsError")));
+    } finally {
+      setNotificationsSaving(false);
+    }
   }
 
   const enabledNotificationCount = useMemo(
@@ -261,6 +354,12 @@ export function SettingsView() {
 
               {activeSection === "notifications" ? (
                 <div className="grid gap-5">
+                  {notificationError ? (
+                    <div className="rounded-[1rem] border border-[#fecaca] bg-[#fff1f2] px-4 py-3 text-sm text-[#b91c1c]">
+                      {notificationError}
+                    </div>
+                  ) : null}
+
                   {notificationSuccess ? (
                     <div className="rounded-[1rem] border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#166534]">
                       {notificationSuccess}
@@ -278,46 +377,58 @@ export function SettingsView() {
                       {t("settings.notificationsText")}
                     </p>
 
-                    <div className="mt-6 grid gap-3">
-                      <NotificationPreferenceCard
-                        title={t("settings.notificationsOffer")}
-                        text={t("settings.notificationsOfferText")}
-                        checked={notificationPreferences.offerReceived}
-                        onToggle={() => handleNotificationToggle("offerReceived")}
-                      />
-                      <NotificationPreferenceCard
-                        title={t("settings.notificationsAssignment")}
-                        text={t("settings.notificationsAssignmentText")}
-                        checked={notificationPreferences.taskAssigned}
-                        onToggle={() => handleNotificationToggle("taskAssigned")}
-                      />
-                      <NotificationPreferenceCard
-                        title={t("settings.notificationsMessages")}
-                        text={t("settings.notificationsMessagesText")}
-                        checked={notificationPreferences.messageReceived}
-                        onToggle={() => handleNotificationToggle("messageReceived")}
-                      />
-                      <NotificationPreferenceCard
-                        title={t("settings.notificationsCompletion")}
-                        text={t("settings.notificationsCompletionText")}
-                        checked={notificationPreferences.taskCompleted}
-                        onToggle={() => handleNotificationToggle("taskCompleted")}
-                      />
-                      <NotificationPreferenceCard
-                        title={t("settings.notificationsMarketplace")}
-                        text={t("settings.notificationsMarketplaceText")}
-                        checked={notificationPreferences.marketplaceUpdates}
-                        onToggle={() => handleNotificationToggle("marketplaceUpdates")}
-                      />
-                    </div>
+                    {notificationsLoading ? (
+                      <div className="mt-6 grid gap-3">
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <div
+                            key={index}
+                            className="h-[92px] animate-pulse rounded-[1.25rem] border border-[#dfe7f3] bg-[#f8fbff]"
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-6 grid gap-3">
+                        <NotificationPreferenceCard
+                          title={t("settings.notificationsOffer")}
+                          text={t("settings.notificationsOfferText")}
+                          checked={notificationPreferences.offerReceived}
+                          onToggle={() => handleNotificationToggle("offerReceived")}
+                        />
+                        <NotificationPreferenceCard
+                          title={t("settings.notificationsAssignment")}
+                          text={t("settings.notificationsAssignmentText")}
+                          checked={notificationPreferences.taskAssigned}
+                          onToggle={() => handleNotificationToggle("taskAssigned")}
+                        />
+                        <NotificationPreferenceCard
+                          title={t("settings.notificationsMessages")}
+                          text={t("settings.notificationsMessagesText")}
+                          checked={notificationPreferences.messageReceived}
+                          onToggle={() => handleNotificationToggle("messageReceived")}
+                        />
+                        <NotificationPreferenceCard
+                          title={t("settings.notificationsCompletion")}
+                          text={t("settings.notificationsCompletionText")}
+                          checked={notificationPreferences.taskCompleted}
+                          onToggle={() => handleNotificationToggle("taskCompleted")}
+                        />
+                        <NotificationPreferenceCard
+                          title={t("settings.notificationsMarketplace")}
+                          text={t("settings.notificationsMarketplaceText")}
+                          checked={notificationPreferences.marketplaceUpdates}
+                          onToggle={() => handleNotificationToggle("marketplaceUpdates")}
+                        />
+                      </div>
+                    )}
 
                     <div className="mt-6 flex flex-wrap items-center gap-3">
                       <button
                         type="button"
-                        onClick={handleSaveNotificationPreferences}
+                        onClick={() => void handleSaveNotificationPreferences()}
                         className="tasko-primary-btn min-w-[220px]"
+                        disabled={notificationsLoading || notificationsSaving}
                       >
-                        {t("settings.notificationsSave")}
+                        {notificationsSaving ? t("settings.saving") : t("settings.notificationsSave")}
                       </button>
                       <p className="text-sm text-[var(--tasko-muted)]">
                         {t("settings.notificationsEnabled").replace(

@@ -133,7 +133,7 @@ export function MyJobsView() {
                   return (
                     <article
                       key={job.taskId}
-                      className="rounded-[1.8rem] border border-[#dfe7f3] bg-white p-5 shadow-[0_16px_34px_rgba(42,78,148,0.08)]"
+                      className="rounded-[1.8rem] border border-[#dfe7f3] bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-5 shadow-[0_16px_34px_rgba(42,78,148,0.08)]"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
@@ -149,10 +149,10 @@ export function MyJobsView() {
                           <h3 className="mt-3 text-xl font-semibold tracking-tight text-[var(--tasko-text)]">
                             {job.taskTitle}
                           </h3>
-                          <p className="mt-2 text-sm tasko-muted">{job.customerName}</p>
+                          <p className="mt-1.5 text-sm font-medium text-[#607392]">{job.customerName}</p>
                         </div>
 
-                        <div className="rounded-[1.25rem] bg-[#f4f7fc] px-4 py-3 text-right">
+                        <div className="rounded-[1.35rem] border border-[#e3ebf7] bg-[#f6f9fe] px-4 py-3 text-right">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">
                             {t("feed.budget")}
                           </p>
@@ -181,7 +181,7 @@ export function MyJobsView() {
                         </div>
                       ) : null}
 
-                      <div className="mt-5 flex flex-wrap gap-3">
+                      <div className="mt-5 flex flex-wrap gap-2.5 border-t border-[#edf2fa] pt-4">
                         <Link href={`/tasks/${job.taskId}`} className="tasko-secondary-btn">
                           {t("myJobs.openTask")}
                         </Link>
@@ -224,18 +224,18 @@ function JobStatCard({
         : "bg-[#eef9f0] text-[#23915d]";
 
   return (
-    <div className="tasko-card p-5">
+    <div className="tasko-card rounded-[1.6rem] p-5">
       <div className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${toneClass}`}>
         {label}
       </div>
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-[var(--tasko-text)]">{value}</p>
+      <p className="mt-3.5 text-[2rem] font-semibold tracking-tight text-[var(--tasko-text)]">{value}</p>
     </div>
   );
 }
 
 function JobMetaCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.2rem] bg-[#f4f7fc] px-4 py-3">
+    <div className="rounded-[1.2rem] border border-[#e6edf8] bg-[#f8fbff] px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8ba0c3]">{label}</p>
       <p className="mt-2 text-sm font-semibold text-[var(--tasko-text)]">{value}</p>
     </div>

@@ -6,8 +6,11 @@ using Microsoft.AspNetCore.RateLimiting;
 using Tasko.API.Settings;
 using Tasko.Application.DTO.Executors;
 using Tasko.Application.DTO.MyExecutorLocationsDto;
+using Tasko.Application.DTO.Notifications;
 using Tasko.Application.DTO.Profile;
 using Tasko.Application.Handlers.Executors.Queries.GetExecutorPublicProfile;
+using Tasko.Application.Handlers.Notifications.Commands.UpdatePreferences;
+using Tasko.Application.Handlers.Notifications.Queries.GetMyPreferences;
 using Tasko.Application.Handlers.Profile.Commands.DisableExecutor;
 using Tasko.Application.Handlers.Profile.Commands.EnableExecutor;
 using Tasko.Application.Handlers.Profile.Commands.UpdateExecutorProfile;
@@ -128,5 +131,23 @@ public sealed class ProfileController : ApiControllerBase
         await _cache.EvictByTagAsync("feed", ct);
 
         return result;
+    }
+
+    [HttpGet("me/preferences")]
+    [ProducesResponseType(typeof(NotificationPreferencesDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<NotificationPreferencesDto>> GetMinePreferences(CancellationToken ct)
+    {
+        var result = await Sender.Send(new GetMyNotificationPreferencesQuery(), ct);
+        return Ok(result);
+    }
+
+    [HttpPut("me/preferences/update")]
+    [ProducesResponseType(typeof(NotificationPreferencesDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<NotificationPreferencesDto>> UpdatePreferences(
+        [FromBody] UpdateNotificationPreferencesCommand command,
+        CancellationToken ct)
+    {
+        var result = await Sender.Send(command, ct);
+        return Ok(result);
     }
 }
